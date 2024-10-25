@@ -1,0 +1,95 @@
+{% extends "booking/navbar.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="row mb-3">
+        <div class="col align-self-center">
+            <input type="checkbox" class="btn-check" id="btn-show-swimmers" autocomplete="off">
+            <label class="btn btn-outline-primary" for="btn-show-swimmers" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers" aria-expanded="false" aria-controls="showSwimmers">
+                <i class="bi bi-people-fill"></i> Nageurs
+            </label>
+        </div>
+    </div>
+    <form action="/home" method="get" class=" border border-2 border-secondary rounded p-2">
+        <div class="row">
+        {% for field in form %}
+            <div class="col align-self-center">
+                <b>{{ field.label_tag }}</b> {{ field|as_crispy_field }} 
+            </div>
+        {% endfor %}
+            <div class="col align-self-center">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-filter"></i> Filtrer
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+    {% for weekday, sessions in weekday_sessions.items %}
+        {% if sessions %}
+        <div class="col-12 col-md-4 col-lg-2 mx-2 my-3 p-0 h-100">
+            <div class="bg-primary text-light text-center fs-4 fw-bold m-0 rounded-3">{{ weekday }}</div>
+            {% for session in sessions %}
+                <div class="rounded-3 mt-3 px-2 py-1 border border-2
+                {% if session.is_cancelled %}
+                bg-danger border-danger text-light
+                {% elif session.swimmer_registration %}
+                    {% if session.swimmer_registration.0.is_cancelled %}
+                    bg-danger border-danger text-light
+                    {% else %}
+                    bg-success border-success text-light 
+                    {% endif %}
+                {% else %}
+                bg-light border-secondary
+                {% endif %}
+                ">
+                <div class="d-flex justify-content-between">
+                    <div style="min-height: 32px;">[{{ session.group }}]</div>
+                    {% if session.swimmer_registration.0.is_regular %}
+                    <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-infinity" viewBox="0 0 16 16">
+                            <path d="M5.68 5.792 7.345 7.75 5.681 9.708a2.75 2.75 0 1 1 0-3.916ZM8 6.978 6.416 5.113l-.014-.015a3.75 3.75 0 1 0 0 5.304l.014-.015L8 8.522l1.584 1.865.014.015a3.75 3.75 0 1 0 0-5.304l-.014.015zm.656.772 1.663-1.958a2.75 2.75 0 1 1 0 3.916z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    {% if session.is_cancelled %}
+                    <div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="fs-2 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
+                <div class="progress mb-1 mt-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar overflow-visible text-dark bg-info" style="width: {{ session.registration_rate }}%">{{ session.total_swimmers }}/{{ session.capacity }} ({{ session.registration_rate }}%)</div>
+                </div>
+                {% if session.coaches or session.swimmers %}
+                <div class="collapse" id="showSwimmers" style="font-family: 'Ubuntu Mono';">
+                {% for coach in session.coaches %}
+                    <div>
+                        <i class="bi bi-stopwatch"></i>
+                        {{ coach.first_name }}&nbsp;{{ coach.last_name }}
+                    </div>
+                {% endfor %}
+                {% for swimmer in session.swimmers %}
+                    <div>
+                        <i class="bi bi-person"></i>
+                        {{ swimmer.first_name }}&nbsp;{{ swimmer.last_name }}
+                    </div>
+                {% endfor %}
+                </div>
+                {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

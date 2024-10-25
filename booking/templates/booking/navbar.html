@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block style %}
+{% include "bootstrap-css.html" %}
+{% include "bootstrap-icons.html" %}
+{% include "ubuntu-font.html" %}
+{% endblock %}
+
+{% block script %}
+{% include "bootstrap-js.html" %}
+{% endblock %}
+
+{% block body %}
+<nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light p-0">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/home"><img src="{% static 'img/logo-uspnap-alpha-128x89.png' %}" style="height: 64px;" alt="Logo"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav fs-3">
+                <li class="nav-item d-flex align-items-center">
+                    <span class="navbar-text text-info fs-6 border border-info rounded px-2 py-1">
+                        <i class="bi bi-person"></i>
+                        {{ user.first_name }} {{ user.last_name }}
+                    </span>   
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mx-2 active" aria-current="page" href="/home">Accueil</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Profil
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="#">Mot de passe</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"></li>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-primary" type="submit">
+                            <i class="bi bi-box-arrow-right"></i>
+                            Déconnexion
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>  
+    </div>
+</nav>
+{% block content %}{% endblock %}
+{% endblock %}
