@@ -19,19 +19,24 @@
                     </span>   
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link mx-2 active" aria-current="page" href="/home">Accueil</a>
+                    <a class="nav-link mx-2" href="{% url 'notice' %}">Notice</a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Profil
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#">Mot de passe</a></li>
-                    </ul>
+                <li class="nav-item">
+                    <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Profil</a>
                 </li>
+                {% if is_board_member %}
+                <li class="nav-item">
+                    <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank">Admin</a>
+                </li>
+                {% endif %}
             </ul>
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"></li>
+                <li class="nav-item">
+                    <a class="mx-2 btn btn-outline-danger mb-2 mb-lg-0" href="https://github.com/orthose/malinedo/issues" target="_blank">
+                        <i class="bi bi-bug"></i> Bug
+                    </a>
+                </li>
+                <li class="nav-item">
                     <form action="{% url 'logout' %}" method="post">
                         {% csrf_token %}
                         <button class="btn btn-outline-primary" type="submit">

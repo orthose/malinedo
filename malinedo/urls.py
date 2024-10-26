@@ -17,13 +17,13 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
 
 import booking
 
 
 urlpatterns = [
-    # TODO: Personnaliser l'URL admin par une variable de configuration
-    path("admin/", admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls, name="admin"),
     path("", include("accounts.urls")),
     path("", include("booking.urls")),
     path("", booking.views.home),

@@ -1,0 +1,83 @@
+{% extends "booking/navbar.html" %}
+
+{% block title %}Notice{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1>Notice d'utilisation</h1>
+            <p>
+                Bienvenue sur <i>MaLineDo</i>, l'application de réservation de créneaux d'entraînement
+                de l'USPalaiseau Nage Avec Palmes&nbsp;!<br><br>
+                
+                Afin de garantir le bon fonctionnement du club, nous devons nous assurer que 
+                le taux d'utilisation des lignes d'eau qui nous sont allouées soit le plus important possible.<br><br>
+
+                <i>MaLineDo</i> a été conçue dans le but de simplifier le processus de réservation des créneaux,
+                en permettant un suivi efficace des inscriptions des nageurs aux séances disponibles.
+                Le tout en automatisant le plus possible le processus de réservation.<br><br>
+
+                Ainsi, <i>MaLineDo</i> n'est pas une application de réservation classique.
+                En effet, son mode de fonctionnement est inversé.
+                Contrairement aux applications de réservation classiques,
+                vous n'avez pas besoin de confirmer votre présence à une séance.
+                La plupart du temps, vous n'aurez absolument rien à faire dans l'application,
+                <span class="text-decoration-underline">sauf en cas de désistement</span>.
+            </p>
+
+            <h1>Première connexion</h1>
+            <p>
+                <div class="alert alert-info">Assurez-vous au préalable qu'un membre du bureau vous a enregistré dans l'application
+                et vous a ajouté à au moins un groupe parmi les suivants&nbsp;: <i>Jeune</i>, <i>Loisir</i>, <i>Compétition</i>.
+                Il existe également un groupe permettant de s'inscrire à une séance en tant qu'entraîneur.</div>
+
+                Lors de votre première connexion, commencez par cliquer sur <b>Profil</b>
+                dans la barre de navigation en haut pour modifier votre mot de passe.<br><br>
+
+                Revenez ensuite à la page d'accueil de l'application.
+                Par défaut, rien ne s'affiche et c'est parfaitement normal.
+            </p>
+            <ol>
+                <li><b>Filtrez</b> les créneaux à afficher en demandant <b>toutes</b> les séances.</li>
+                <li>Cliquez sur le bouton <b>Éditer</b>.</li>
+                <li>Choisissez un créneau et cliquez sur le bouton <b>Régulier</b>.</li>
+            </ol>
+            <p>
+                Si vous êtes dans le groupe <i>Loisir</i> choisissez seulement un créneau régulier,
+                et au moins deux si vous êtes dans le groupe <i>Compétition</i>.<br><br>
+
+                Voilà c'est tout&nbsp;! Avec un peu de chance vous n'aurez plus jamais
+                besoin de revenir sur <i>MaLineDo</i>.<br><br>
+            </p>
+
+            <h1>Les inscriptions</h1>
+            <p>
+                Lorsque vous êtes inscrit à un créneau <b>régulier</b>, cela signifie
+                que vous vous engagez à y participer chaque semaine.
+                Votre inscription est alors renouvelée automatiquement chaque semaine.<br><br>
+
+                Une inscription <b>ponctuelle</b> quant à elle n'est valable que pour
+                la semaine courante. Au terme de la semaine, l'inscription
+                sera automatiquement supprimée.<br><br>
+
+                <div class="alert alert-danger">Néanmoins, si vous ne pouvez pas assister à une séance,
+                vous devez impérativement annuler votre présence.</div>
+            </p>
+            <ol>
+                <li>Cliquez sur le bouton <b>Éditer</b>.</li>
+                <li>Choisissez le créneau à annuler et cliquez sur <b>Annuler</b>.</li>
+            </ol>
+            <p>
+                Le bouton <b>Supprimer</b> disponible uniquement pour les inscriptions régulières,
+                permet de se désinscrire définitivement par exemple dans le cas
+                d'une blessure qui va durer plusieurs semaines.
+            </p>
+            <p>
+                Merci pour votre attention&nbsp;!
+                Pour revenir sur l'accueil, cliquez sur le logo en haut à gauche.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

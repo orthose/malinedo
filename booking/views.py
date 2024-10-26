@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import (
+    ClubGroup,
     RegisterPermission,
     WeeklySession,
     SessionRegistration,
@@ -35,7 +36,6 @@ def home(request: HttpRequest) -> HttpResponse:
     )
 
     schedule_form.filter_group_choices(request.user)
-    print(schedule_form.fields["group"].choices)
 
     sessions = None
     if schedule_form.is_valid():
@@ -96,6 +96,7 @@ def home(request: HttpRequest) -> HttpResponse:
         "schedule_form": schedule_form,
         "weekday_sessions": weekday_sessions,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
+        "is_board_member": request.user.groups.filter(name=ClubGroup.BOARD),
     }
 
     return render(request, "booking/home.html", context)
@@ -110,8 +111,6 @@ def edit(request: HttpRequest) -> HttpResponse:
             session = get_object_or_404(
                 WeeklySession, pk=form.cleaned_data["session_id"]
             )
-
-            print(form.cleaned_data)
 
             fields = {}
             for field in ["is_regular", "is_cancelled", "swimmer_is_coach"]:
@@ -150,3 +149,8 @@ def edit(request: HttpRequest) -> HttpResponse:
             return redirect(request.GET["next"])
 
     raise Http404
+
+
+@login_required
+def notice(request: HttpRequest) -> HttpRequest:
+    return render(request, "booking/notice.html")
