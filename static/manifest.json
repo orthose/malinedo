@@ -1,0 +1,14 @@
+{
+    "name":"MaLineDo",
+    "short_name":"MLD",
+    "lang": "fr",
+    "description": "MaLineDo est une application de réservation de créneaux pour le club de l'USPalaiseau NAP",
+    "start_url": "./home",
+    "theme_color":"#ffffff",
+    "background_color":"#ffffff",
+    "display":"standalone",
+    "icons":[
+        {"src":"/static/img/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},
+        {"src":"/static/img/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}
+    ]
+}
