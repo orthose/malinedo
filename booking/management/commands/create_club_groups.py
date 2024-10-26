@@ -2,10 +2,12 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 
 from booking.models import (
-    ClubGroups,
+    ClubGroup,
+    RegisterPermission,
     WeeklySession,
     SessionRegistration,
 )
+from accounts.models import User
 
 
 class Command(BaseCommand):
@@ -17,52 +19,61 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         ### Permissions ###
-        all_weekly_training_session = Permission.objects.filter(
+        all_weekly_session = Permission.objects.filter(
             codename__in=[
                 f"{permission}_{WeeklySession._meta.model_name}"
                 for permission in ["add", "change", "delete", "view"]
             ]
         )
 
-        view_weekly_training_session = Permission.objects.get(
-            codename=f"view_{WeeklySession._meta.model_name}"
-        )
-
-        all_registration = Permission.objects.filter(
+        all_session_registration = Permission.objects.filter(
             codename__in=[
                 f"{permission}_{SessionRegistration._meta.model_name}"
                 for permission in ["add", "change", "delete", "view"]
             ]
         )
 
+        all_user = Permission.objects.filter(
+            codename__in=[
+                f"{permission}_{User._meta.model_name}"
+                for permission in ["add", "change", "delete", "view"]
+            ]
+        )
+
         register_coach_session = Permission.objects.get(
-            codename="register_coach_session"
+            codename=RegisterPermission.COACH
+        )
+
+        register_young_session = Permission.objects.get(
+            codename=RegisterPermission.YOUNG
         )
 
         register_leisure_session = Permission.objects.get(
-            codename="register_leisure_session"
+            codename=RegisterPermission.LEISURE
         )
 
         register_compet_session = Permission.objects.get(
-            codename="register_compet_session"
+            codename=RegisterPermission.COMPET
         )
 
         ### Bureau ###
-        board_group, _ = Group.objects.get_or_create(name=ClubGroups.BOARD.value)
-        board_group.permissions.add(*all_weekly_training_session)
+        board_group, _ = Group.objects.get_or_create(name=ClubGroup.BOARD)
+        board_group.permissions.add(*all_weekly_session)
+        board_group.permissions.add(*all_session_registration)
+        board_group.permissions.add(*all_user)
 
         ### Entraîneur ###
-        coach_group, _ = Group.objects.get_or_create(name=ClubGroups.COACH.value)
+        coach_group, _ = Group.objects.get_or_create(name=ClubGroup.COACH)
         coach_group.permissions.add(register_coach_session)
 
+        ### Jeune ###
+        young_group, _ = Group.objects.get_or_create(name=ClubGroup.YOUNG)
+        young_group.permissions.add(register_young_session)
+
         ### Loisir ###
-        leisure_group, _ = Group.objects.get_or_create(name=ClubGroups.LEISURE.value)
-        leisure_group.permissions.add(view_weekly_training_session)
-        leisure_group.permissions.add(*all_registration)
+        leisure_group, _ = Group.objects.get_or_create(name=ClubGroup.LEISURE)
         leisure_group.permissions.add(register_leisure_session)
 
         ### Compétition ###
-        compet_group, _ = Group.objects.get_or_create(name=ClubGroups.COMPET.value)
-        compet_group.permissions.add(view_weekly_training_session)
-        compet_group.permissions.add(*all_registration)
+        compet_group, _ = Group.objects.get_or_create(name=ClubGroup.COMPET)
         compet_group.permissions.add(register_compet_session)

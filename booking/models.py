@@ -1,5 +1,4 @@
 import datetime
-from enum import Enum
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -33,12 +32,33 @@ def get_week_field() -> models.Field:
     )
 
 
-class ClubGroups(Enum):
+class ClubGroup:
     BOARD = "Bureau"
     COACH = "Entraîneur"
     YOUNG = "Jeune"
     LEISURE = "Loisir"
     COMPET = "Compétition"
+
+
+class RegisterPermission:
+    COACH = "register_coach_session"
+    YOUNG = "register_young_session"
+    LEISURE = "register_leisure_session"
+    COMPET = "register_compet_session"
+
+    @classmethod
+    def get_perm(cls, group: str) -> str | None:
+        match group:
+            case "J":
+                return "booking." + cls.YOUNG
+
+            case "L":
+                return "booking." + cls.LEISURE
+
+            case "C":
+                return "booking." + cls.COMPET
+
+        return None
 
 
 class AbstractWeeklySession(models.Model):
@@ -53,9 +73,9 @@ class AbstractWeeklySession(models.Model):
     }
 
     GROUP = {
-        "J": ClubGroups.YOUNG.value,
-        "L": ClubGroups.LEISURE.value,
-        "C": ClubGroups.COMPET.value,
+        "J": ClubGroup.YOUNG,
+        "L": ClubGroup.LEISURE,
+        "C": ClubGroup.COMPET,
     }
 
     group = models.CharField("Groupe", max_length=1, choices=GROUP)
@@ -303,16 +323,20 @@ class SessionRegistration(AbstractSessionRegistration):
         ]
         permissions = [
             (
-                "register_coach_session",
-                "Le nageur peut s'inscrire en tant qu'entraîneur à une session régulière",
+                RegisterPermission.COACH,
+                "Le nageur peut s'inscrire en tant qu'entraîneur à une session",
             ),
             (
-                "register_leisure_session",
-                "Le nageur en loisir peut s'inscrire à une session de loisir régulière",
+                RegisterPermission.YOUNG,
+                "Le jeune nageur peut s'inscrire à une session de jeune",
             ),
             (
-                "register_compet_session",
-                "Le nageur en compétition peut s'inscrire à une session de compétition régulière",
+                RegisterPermission.LEISURE,
+                "Le nageur en loisir peut s'inscrire à une session de loisir",
+            ),
+            (
+                RegisterPermission.COMPET,
+                "Le nageur en compétition peut s'inscrire à une session de compétition",
             ),
         ]
 

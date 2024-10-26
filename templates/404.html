@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block style %}
+<style>
+    body {
+        padding: 0 0;
+        margin: 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="fullscreen-container d-flex flex-column justify-content-center align-items-center" style="height: 100vh;">
+    <h1 class="text-info text-center m-0" style="font-size: 100px">404</h1>
+    <img src="{% static 'img/splash-water.jpg' %}" alt="Splash Water" class="img-fluid">
+</div>
+{% endblock %}

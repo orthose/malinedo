@@ -1,24 +1,27 @@
-import datetime
 from django.db import models
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.http import HttpRequest, HttpResponse, Http404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import (
+    RegisterPermission,
     WeeklySession,
     SessionRegistration,
     WeeklySessionHistory,
     SessionRegistrationHistory,
     GlobalSetting,
 )
-from .forms import ScheduleForm
+from .forms import (
+    ScheduleForm,
+    EditSessionRegistrationForm,
+)
 
 
 @login_required
 def home(request: HttpRequest) -> HttpResponse:
     weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
 
-    form = (
+    schedule_form = (
         ScheduleForm(request.GET)
         if len(request.GET) > 0
         else ScheduleForm(
@@ -31,36 +34,39 @@ def home(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    # TODO: Ne pas proposer les groupes auxquels n'appartient pas le nageur
-    # Retirer Tous si le nageur n'appartient qu'à un groupe
-    # print(context["form"].fields["group"].choices)
+    schedule_form.filter_group_choices(request.user)
+    print(schedule_form.fields["group"].choices)
 
     sessions = None
-    if form.is_valid():
+    if schedule_form.is_valid():
         filters = {}
         weekly_session_model = WeeklySession
         session_registration_model = SessionRegistration
 
         if (
-            form.cleaned_data["year"] == GlobalSetting.get_year()
-            and form.cleaned_data["week"] == GlobalSetting.get_week()
+            schedule_form.cleaned_data["year"] == GlobalSetting.get_year()
+            and schedule_form.cleaned_data["week"] == GlobalSetting.get_week()
         ):
             weekly_session_model = WeeklySession
             session_registration_model = SessionRegistration
         else:
             weekly_session_model = WeeklySessionHistory
             session_registration_model = SessionRegistrationHistory
-            filters["year"] = form.cleaned_data["year"]
-            filters["week"] = form.cleaned_data["week"]
+            filters["year"] = schedule_form.cleaned_data["year"]
+            filters["week"] = schedule_form.cleaned_data["week"]
 
-        match form.cleaned_data["sessions"]:
+        match schedule_form.cleaned_data["sessions"]:
             case ScheduleForm.SessionFilter.MY:
                 filters[f"{session_registration_model.__name__.lower()}__swimmer"] = (
                     request.user
                 )
 
-        if form.cleaned_data["group"] != ScheduleForm.GroupFilter.ALL:
-            filters["group"] = form.cleaned_data["group"]
+        if schedule_form.cleaned_data["group"] != ScheduleForm.GroupFilter.ALL:
+            filters["group"] = schedule_form.cleaned_data["group"]
+        else:
+            groups = [group for group, _ in schedule_form.fields["group"].choices]
+            groups.remove("A")
+            filters["group__in"] = groups
 
         sessions = (
             weekly_session_model.objects.filter(**filters)
@@ -87,8 +93,60 @@ def home(request: HttpRequest) -> HttpResponse:
         weekday_sessions[WeeklySession.WEEKDAY[session.weekday]].append(session)
 
     context = {
-        "form": form,
+        "schedule_form": schedule_form,
         "weekday_sessions": weekday_sessions,
+        "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
     }
 
     return render(request, "booking/home.html", context)
+
+
+@login_required
+def edit(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST" and "next" in request.GET:
+        form = EditSessionRegistrationForm(request.POST)
+
+        if form.is_valid():
+            session = get_object_or_404(
+                WeeklySession, pk=form.cleaned_data["session_id"]
+            )
+
+            print(form.cleaned_data)
+
+            fields = {}
+            for field in ["is_regular", "is_cancelled", "swimmer_is_coach"]:
+                if field in request.POST:
+                    fields[field] = form.cleaned_data[field]
+
+            if (
+                # Si le nageur veut s'inscire en tant qu'entraîneur en a-t-il la permission ?
+                (
+                    not form.cleaned_data["swimmer_is_coach"]
+                    or request.user.has_perm("booking." + RegisterPermission.COACH)
+                )
+                # Est-ce que la nageur a la permission de s'inscrire en fonction de ses groupes ?
+                and request.user.has_perm(RegisterPermission.get_perm(session.group))
+                # S'il s'agit d'une inscription est-ce que le nageur a déjà un entraînement prévu à la même heure le même jour ?
+                and (
+                    not "is_regular" in fields
+                    or not SessionRegistration.objects.filter(
+                        swimmer=request.user,
+                        session__weekday=session.weekday,
+                        session__start_hour=session.start_hour,
+                    ).exists()
+                )
+            ):
+                SessionRegistration.objects.update_or_create(
+                    swimmer=request.user,
+                    session=session,
+                    defaults=fields,
+                )
+
+            if form.cleaned_data["remove"]:
+                SessionRegistration.objects.filter(
+                    swimmer=request.user, session=session
+                ).delete()
+
+            return redirect(request.GET["next"])
+
+    raise Http404

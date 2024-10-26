@@ -5,17 +5,23 @@
 
 {% block content %}
 <div class="container mt-3">
-    <div class="row mb-3">
-        <div class="col align-self-center">
+    <div class="row mb-3 justify-content-start">
+        <div class="col-auto align-self-center">
             <input type="checkbox" class="btn-check" id="btn-show-swimmers" autocomplete="off">
             <label class="btn btn-outline-primary" for="btn-show-swimmers" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers" aria-expanded="false" aria-controls="showSwimmers">
                 <i class="bi bi-people-fill"></i> Nageurs
             </label>
         </div>
+        <div class="col-auto align-self-center">
+            <input type="checkbox" class="btn-check" id="btn-edit-sessions" autocomplete="off">
+            <label class="btn btn-outline-primary" for="btn-edit-sessions" type="button" data-bs-toggle="collapse" data-bs-target="#editSessions" aria-expanded="false" aria-controls="editSessions">
+                <i class="bi bi-pencil-square"></i> Éditer
+            </label>
+        </div>
     </div>
-    <form action="/home" method="get" class=" border border-2 border-secondary rounded p-2">
+    <form action="{% url 'home' %}" method="get" class=" border border-2 border-secondary rounded p-2">
         <div class="row">
-        {% for field in form %}
+        {% for field in schedule_form %}
             <div class="col align-self-center">
                 <b>{{ field.label_tag }}</b> {{ field|as_crispy_field }} 
             </div>
@@ -84,7 +90,42 @@
                     </div>
                 {% endfor %}
                 </div>
-                {% endif %}
+                {% endif %}  
+                <div id="editSessions" class="collapse">
+                    <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mt-2 mb-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="session_id" value="{{ session.id }}">
+                        <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription" style="white-space: nowrap; overflow: scroll;">
+                            {% if not session.is_cancelled %}
+                            {% if not session.swimmer_registration %}
+                            <button type="submit" name="is_regular" value="true" class="btn btn-outline-success">
+                                <i class="bi bi-infinity"></i> Régulier
+                            </button>
+                            <button type="submit" name="is_regular" value="false" class="btn btn-outline-success">
+                                <i class="bi bi-person-add"></i> Ponctuel
+                            </button>
+                            {% if has_perm_coach %}
+                            <input type="checkbox" name="swimmer_is_coach" class="btn-check" id="btn-coach-{{ session.id }}" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="btn-coach-{{ session.id }}" type="button">
+                                <i class="bi bi-stopwatch"></i> Entraîneur
+                            </label>
+                            {% endif %}
+                            {% else %}
+                            {% if not session.swimmer_registration.0.is_cancelled %}
+                            <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
+                                <i class="bi bi-person-dash"></i> Annuler
+                            </button>
+                            {% if session.swimmer_registration.0.is_regular %}
+                            <button type="submit" name="remove" value="true" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Supprimer
+                            </button>
+                            {% endif %}
+                            {% endif %}
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
                 </div>
             {% endfor %}
         </div>
