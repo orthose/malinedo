@@ -13,13 +13,6 @@ class Command(BaseCommand):
         ### Jeune ###
         WeeklySession.objects.update_or_create(
             group="J",
-            weekday=2,
-            start_hour=datetime.time(18, 30),
-            stop_hour=datetime.time(20, 0),
-            capacity=8,
-        )
-        WeeklySession.objects.update_or_create(
-            group="J",
             weekday=3,
             start_hour=datetime.time(17, 0),
             stop_hour=datetime.time(18, 0),
@@ -32,35 +25,28 @@ class Command(BaseCommand):
             weekday=2,
             start_hour=datetime.time(20, 30),
             stop_hour=datetime.time(21, 30),
-            capacity=4,
-        )
-        WeeklySession.objects.update_or_create(
-            group="L",
-            weekday=3,
-            start_hour=datetime.time(17, 0),
-            stop_hour=datetime.time(18, 0),
-            capacity=4,
+            capacity=10,
         )
         WeeklySession.objects.update_or_create(
             group="L",
             weekday=3,
             start_hour=datetime.time(18, 0),
             stop_hour=datetime.time(19, 0),
-            capacity=4,
+            capacity=5,
         )
         WeeklySession.objects.update_or_create(
             group="L",
             weekday=4,
             start_hour=datetime.time(20, 30),
             stop_hour=datetime.time(21, 30),
-            capacity=8,
+            capacity=10,
         )
         WeeklySession.objects.update_or_create(
             group="L",
             weekday=5,
             start_hour=datetime.time(20, 30),
             stop_hour=datetime.time(21, 30),
-            capacity=8,
+            capacity=10,
         )
 
         ### Compétition ###
@@ -74,9 +60,23 @@ class Command(BaseCommand):
         WeeklySession.objects.update_or_create(
             group="C",
             weekday=2,
+            start_hour=datetime.time(18, 30),
+            stop_hour=datetime.time(20, 0),
+            capacity=8,
+        )
+        WeeklySession.objects.update_or_create(
+            group="C",
+            weekday=2,
             start_hour=datetime.time(20, 0),
             stop_hour=datetime.time(21, 30),
             capacity=8,
+        )
+        WeeklySession.objects.update_or_create(
+            group="C",
+            weekday=3,
+            start_hour=datetime.time(17, 0),
+            stop_hour=datetime.time(18, 0),
+            capacity=4,
         )
         WeeklySession.objects.update_or_create(
             group="C",
@@ -90,7 +90,7 @@ class Command(BaseCommand):
             weekday=4,
             start_hour=datetime.time(20, 30),
             stop_hour=datetime.time(21, 30),
-            capacity=4,
+            capacity=8,
         )
         WeeklySession.objects.update_or_create(
             group="C",
