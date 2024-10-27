@@ -7,7 +7,12 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 def get_anonymous_user() -> AbstractUser:
-    return get_user_model().objects.get_or_create(username="Anonyme")[0]
+    return get_user_model().objects.get_or_create(
+        username="Anonyme",
+        email="anonyme@anonyme.fr",
+        first_name="Inconnu",
+        last_name="",
+    )[0]
 
 
 def get_current_year() -> int:
