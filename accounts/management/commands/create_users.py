@@ -42,8 +42,7 @@ class Command(BaseCommand):
                 row["Mail"] = row["Mail"].strip()
                 
                 user_exists = get_user_model().objects.filter(
-                    username=f"{row['Prénom']} {row['Nom']}",
-                    email=row["Mail"],
+                    username=row['Mail'],
                     first_name=row["Prénom"],
                     last_name=row["Nom"],
                 ).exists()
@@ -52,8 +51,7 @@ class Command(BaseCommand):
                 if not user_exists:
                     try:
                         user = get_user_model().objects.create(
-                            username=f"{row['Prénom']} {row['Nom']}",
-                            email=row["Mail"],
+                            username=row['Mail'],
                             first_name=row["Prénom"],
                             last_name=row["Nom"],
                         )
@@ -74,7 +72,8 @@ class Command(BaseCommand):
     def add_group(self, filename: str):
         young_group = Group.objects.get(name=ClubGroup.YOUNG)
         leisure_group = Group.objects.get(name=ClubGroup.LEISURE)
-        compet_group = Group.objects.get(name=ClubGroup.COMPET)
+        competn1_group = Group.objects.get(name=ClubGroup.COMPET_N1)
+        competn2_group = Group.objects.get(name=ClubGroup.COMPET_N2)
 
         with open(filename, mode="r") as csvfile:
             reader = csv.DictReader(csvfile, delimiter=";")
@@ -90,7 +89,6 @@ class Command(BaseCommand):
 
                 try:
                     user = get_user_model().objects.get(
-                        username=f"{row['Prénom']} {row['Nom']}",
                         first_name=row["Prénom"],
                         last_name=row["Nom"],
                     )
@@ -109,7 +107,8 @@ class Command(BaseCommand):
                     case "C":
                         user.groups.add(
                             young_group,
-                            compet_group,
+                            competn1_group,
+                            competn2_group,
                         )
                         self.stdout.write(
                             self.style.SUCCESS(f"{row['Prénom']} {row['Nom']} a été ajouté aux groupes de compétition")

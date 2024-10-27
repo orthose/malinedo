@@ -10,15 +10,6 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        ### Jeune ###
-        WeeklySession.objects.update_or_create(
-            group="J",
-            weekday=3,
-            start_hour=datetime.time(17, 0),
-            stop_hour=datetime.time(18, 0),
-            capacity=4,
-        )
-
         ### Loisir ###
         WeeklySession.objects.update_or_create(
             group="L",
@@ -49,53 +40,78 @@ class Command(BaseCommand):
             capacity=10,
         )
 
-        ### Compétition ###
+        ### Compétiton Jeune ###
         WeeklySession.objects.update_or_create(
-            group="C",
-            weekday=1,
-            start_hour=datetime.time(20, 0),
-            stop_hour=datetime.time(21, 30),
-            capacity=8,
+            group="J",
+            weekday=3,
+            start_hour=datetime.time(17, 0),
+            stop_hour=datetime.time(18, 0),
+            capacity=4,
         )
+
+        ### Compétition N1 ###
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C1",
             weekday=2,
             start_hour=datetime.time(18, 30),
             stop_hour=datetime.time(20, 0),
             capacity=8,
         )
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C1",
+            weekday=4,
+            start_hour=datetime.time(19, 30),
+            stop_hour=datetime.time(20, 30),
+            capacity=8,
+        )
+        WeeklySession.objects.update_or_create(
+            group="C1",
+            weekday=5,
+            start_hour=datetime.time(19, 0),
+            stop_hour=datetime.time(20, 30),
+            capacity=4,
+        )
+
+        ### Compétition N2 ###
+        WeeklySession.objects.update_or_create(
+            group="C2",
+            weekday=1,
+            start_hour=datetime.time(20, 0),
+            stop_hour=datetime.time(21, 30),
+            capacity=8,
+        )
+        WeeklySession.objects.update_or_create(
+            group="C2",
             weekday=2,
             start_hour=datetime.time(20, 0),
             stop_hour=datetime.time(21, 30),
             capacity=8,
         )
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C2",
             weekday=3,
             start_hour=datetime.time(17, 0),
             stop_hour=datetime.time(18, 0),
             capacity=4,
         )
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C2",
             weekday=4,
             start_hour=datetime.time(19, 30),
             stop_hour=datetime.time(20, 30),
-            capacity=12,
+            capacity=4,
         )
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C2",
             weekday=4,
             start_hour=datetime.time(20, 30),
             stop_hour=datetime.time(21, 30),
             capacity=8,
         )
         WeeklySession.objects.update_or_create(
-            group="C",
+            group="C2",
             weekday=5,
             start_hour=datetime.time(19, 0),
             stop_hour=datetime.time(20, 30),
-            capacity=12,
+            capacity=8,
         )

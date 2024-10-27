@@ -13,9 +13,10 @@ class ScheduleForm(forms.Form):
 
     class GroupFilter(TextChoices):
         ALL = "A", "Tous"
-        YOUNG = "J", ClubGroup.YOUNG
         LEISURE = "L", ClubGroup.LEISURE
-        COMPET = "C", ClubGroup.COMPET
+        YOUNG = "J", ClubGroup.YOUNG
+        COMPET_N1 = "C1", ClubGroup.COMPET_N1
+        COMPET_N2 = "C2", ClubGroup.COMPET_N2
 
     sessions = forms.ChoiceField(label="Séances", choices=SessionFilter)
     group = forms.ChoiceField(label="Groupe", choices=GroupFilter)

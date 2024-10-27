@@ -40,28 +40,33 @@ def get_week_field() -> models.Field:
 class ClubGroup:
     BOARD = "Bureau"
     COACH = "Entraîneur"
-    YOUNG = "Jeune"
     LEISURE = "Loisir"
-    COMPET = "Compétition"
+    YOUNG = "Jeune" # Jeunes compétiteurs
+    COMPET_N1 = "Compétition N1" # Compétiteurs classiques
+    COMPET_N2 = "Compétition N2" # Compétiteurs confirmés
 
 
 class RegisterPermission:
     COACH = "register_coach_session"
-    YOUNG = "register_young_session"
     LEISURE = "register_leisure_session"
-    COMPET = "register_compet_session"
+    YOUNG = "register_young_session"
+    COMPET_N1 = "register_competn1_session"
+    COMPET_N2 = "register_competn2_session"
 
     @classmethod
     def get_perm(cls, group: str) -> str | None:
         match group:
+            case "L":
+                return "booking." + cls.LEISURE
+            
             case "J":
                 return "booking." + cls.YOUNG
 
-            case "L":
-                return "booking." + cls.LEISURE
-
-            case "C":
-                return "booking." + cls.COMPET
+            case "C1":
+                return "booking." + cls.COMPET_N1
+            
+            case "C2":
+                return "booking." + cls.COMPET_N2
 
         return None
 
@@ -78,12 +83,13 @@ class AbstractWeeklySession(models.Model):
     }
 
     GROUP = {
-        "J": ClubGroup.YOUNG,
         "L": ClubGroup.LEISURE,
-        "C": ClubGroup.COMPET,
+        "J": ClubGroup.YOUNG,
+        "C1": ClubGroup.COMPET_N1,
+        "C2": ClubGroup.COMPET_N2,
     }
 
-    group = models.CharField("Groupe", max_length=1, choices=GROUP)
+    group = models.CharField("Groupe", max_length=2, choices=GROUP)
     weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAY)
     start_hour = models.TimeField("Heure début")
     stop_hour = models.TimeField("Heure fin")
@@ -332,16 +338,20 @@ class SessionRegistration(AbstractSessionRegistration):
                 "Le nageur peut s'inscrire en tant qu'entraîneur à une session",
             ),
             (
-                RegisterPermission.YOUNG,
-                "Le jeune nageur peut s'inscrire à une session de jeune",
-            ),
-            (
                 RegisterPermission.LEISURE,
                 "Le nageur en loisir peut s'inscrire à une session de loisir",
             ),
             (
-                RegisterPermission.COMPET,
-                "Le nageur en compétition peut s'inscrire à une session de compétition",
+                RegisterPermission.YOUNG,
+                "Le jeune nageur peut s'inscrire à une session de jeune",
+            ),
+            (
+                RegisterPermission.COMPET_N1,
+                "Le nageur en compétition peut s'inscrire à une session de compétition de niveau 1",
+            ),
+            (
+                RegisterPermission.COMPET_N2,
+                "Le nageur en compétition peut s'inscrire à une session de compétition de niveau 2",
             ),
         ]
 

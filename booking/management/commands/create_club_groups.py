@@ -44,16 +44,20 @@ class Command(BaseCommand):
             codename=RegisterPermission.COACH
         )
 
-        register_young_session = Permission.objects.get(
-            codename=RegisterPermission.YOUNG
-        )
-
         register_leisure_session = Permission.objects.get(
             codename=RegisterPermission.LEISURE
         )
 
-        register_compet_session = Permission.objects.get(
-            codename=RegisterPermission.COMPET
+        register_young_session = Permission.objects.get(
+            codename=RegisterPermission.YOUNG
+        )
+
+        register_competn1_session = Permission.objects.get(
+            codename=RegisterPermission.COMPET_N1
+        )
+
+        register_competn2_session = Permission.objects.get(
+            codename=RegisterPermission.COMPET_N2
         )
 
         ### Bureau ###
@@ -66,14 +70,18 @@ class Command(BaseCommand):
         coach_group, _ = Group.objects.get_or_create(name=ClubGroup.COACH)
         coach_group.permissions.add(register_coach_session)
 
-        ### Jeune ###
-        young_group, _ = Group.objects.get_or_create(name=ClubGroup.YOUNG)
-        young_group.permissions.add(register_young_session)
-
         ### Loisir ###
         leisure_group, _ = Group.objects.get_or_create(name=ClubGroup.LEISURE)
         leisure_group.permissions.add(register_leisure_session)
 
-        ### Compétition ###
-        compet_group, _ = Group.objects.get_or_create(name=ClubGroup.COMPET)
-        compet_group.permissions.add(register_compet_session)
+        ### Jeune ###
+        young_group, _ = Group.objects.get_or_create(name=ClubGroup.YOUNG)
+        young_group.permissions.add(register_young_session)
+
+        ### Compétition N1 ###
+        compet_group, _ = Group.objects.get_or_create(name=ClubGroup.COMPET_N1)
+        compet_group.permissions.add(register_competn1_session)
+
+        ### Compétition N2 ###
+        compet_group, _ = Group.objects.get_or_create(name=ClubGroup.COMPET_N2)
+        compet_group.permissions.add(register_competn2_session)
