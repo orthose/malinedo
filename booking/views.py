@@ -127,7 +127,7 @@ def edit(request: HttpRequest) -> HttpResponse:
                 and request.user.has_perm(RegisterPermission.get_perm(session.group))
                 # S'il s'agit d'une inscription est-ce que le nageur a déjà un entraînement prévu à la même heure le même jour ?
                 and (
-                    not "is_regular" in fields
+                    "is_regular" not in fields
                     or not SessionRegistration.objects.filter(
                         swimmer=request.user,
                         session__weekday=session.weekday,
