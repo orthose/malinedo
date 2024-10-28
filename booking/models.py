@@ -41,9 +41,9 @@ class ClubGroup:
     BOARD = "Bureau"
     COACH = "Entraîneur"
     LEISURE = "Loisir"
-    YOUNG = "Jeune" # Jeunes compétiteurs
-    COMPET_N1 = "Compétition N1" # Compétiteurs classiques
-    COMPET_N2 = "Compétition N2" # Compétiteurs confirmés
+    YOUNG = "Jeune"  # Jeunes compétiteurs
+    COMPET_N1 = "Compétition N1"  # Compétiteurs classiques
+    COMPET_N2 = "Compétition N2"  # Compétiteurs confirmés
 
 
 class RegisterPermission:
@@ -58,13 +58,13 @@ class RegisterPermission:
         match group:
             case "L":
                 return "booking." + cls.LEISURE
-            
+
             case "J":
                 return "booking." + cls.YOUNG
 
             case "C1":
                 return "booking." + cls.COMPET_N1
-            
+
             case "C2":
                 return "booking." + cls.COMPET_N2
 

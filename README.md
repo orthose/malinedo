@@ -18,6 +18,8 @@ ruff format
 
 ```bash
 python manage.py migrate
+# Mettre la même adresse e-mail la 2ème fois
+# sinon cela bloque la création des utilisateurs
 python manage.py createsuperuser
 python manage.py create_global_settings
 python manage.py create_club_groups
