@@ -12,12 +12,14 @@
                 <i class="bi bi-people-fill"></i> Nageurs
             </label>
         </div>
+        {% if is_current_week %}
         <div class="col-auto align-self-center">
             <input type="checkbox" class="btn-check" id="btn-edit-sessions" autocomplete="off">
             <label class="btn btn-outline-primary" for="btn-edit-sessions" type="button" data-bs-toggle="collapse" data-bs-target="#editSessions" aria-expanded="false" aria-controls="editSessions">
                 <i class="bi bi-pencil-square"></i> Éditer
             </label>
         </div>
+        {% endif %}
     </div>
     <form action="{% url 'home' %}" method="get" class=" border border-2 border-secondary rounded p-2">
         <div class="row">
@@ -90,12 +92,13 @@
                     </div>
                 {% endfor %}
                 </div>
-                {% endif %}  
+                {% endif %}
+                {% if is_current_week %}
                 <div id="editSessions" class="collapse">
                     <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mt-2 mb-1">
                         {% csrf_token %}
                         <input type="hidden" name="session_id" value="{{ session.id }}">
-                        <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription" style="white-space: nowrap; overflow: scroll;">
+                        <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription">
                             {% if not session.is_cancelled %}
                             {% if not session.swimmer_registration %}
                             <button type="submit" name="is_regular" value="true" class="btn btn-outline-success">
@@ -126,6 +129,7 @@
                         </div>
                     </form>
                 </div>
+                {% endif %}
                 </div>
             {% endfor %}
         </div>

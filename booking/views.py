@@ -38,6 +38,7 @@ def home(request: HttpRequest) -> HttpResponse:
     schedule_form.filter_group_choices(request.user)
 
     sessions = None
+    is_current_week = True
     if schedule_form.is_valid():
         filters = {}
         weekly_session_model = WeeklySession
@@ -50,6 +51,7 @@ def home(request: HttpRequest) -> HttpResponse:
             weekly_session_model = WeeklySession
             session_registration_model = SessionRegistration
         else:
+            is_current_week = False
             weekly_session_model = WeeklySessionHistory
             session_registration_model = SessionRegistrationHistory
             filters["year"] = schedule_form.cleaned_data["year"]
@@ -95,6 +97,7 @@ def home(request: HttpRequest) -> HttpResponse:
     context = {
         "schedule_form": schedule_form,
         "weekday_sessions": weekday_sessions,
+        "is_current_week": is_current_week,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
         "is_board_member": request.user.groups.filter(name=ClubGroup.BOARD),
     }
