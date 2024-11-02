@@ -42,7 +42,7 @@ class ScheduleForm(forms.Form):
             if group == self.GroupFilter.ALL
             or user.has_perm(RegisterPermission.get_perm(group))
         ]
-        self.fields["group"] = forms.ChoiceField(label="Séances", choices=choices)
+        self.fields["group"] = forms.ChoiceField(label="Groupe", choices=choices)
 
 
 class EditSessionRegistrationForm(forms.Form):
