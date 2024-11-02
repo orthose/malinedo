@@ -24,7 +24,7 @@
                 <li class="nav-item">
                     <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Profil</a>
                 </li>
-                {% if is_board_member %}
+                {% if user.is_board_member %}
                 <li class="nav-item">
                     <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank">Admin</a>
                 </li>

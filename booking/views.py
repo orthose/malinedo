@@ -4,7 +4,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import (
-    ClubGroup,
     RegisterPermission,
     WeeklySession,
     SessionRegistration,
@@ -99,7 +98,6 @@ def home(request: HttpRequest) -> HttpResponse:
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
-        "is_board_member": request.user.groups.filter(name=ClubGroup.BOARD),
     }
 
     return render(request, "booking/home.html", context)

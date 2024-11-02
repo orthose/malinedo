@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from booking.groups import ClubGroup
+
 
 class User(AbstractUser):
     # Authentification par email
@@ -13,3 +15,7 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
         # Forcer email = username
         self.email = self.username
+
+    @property
+    def is_board_member(self) -> bool:
+        return self.groups.filter(name=ClubGroup.BOARD)
