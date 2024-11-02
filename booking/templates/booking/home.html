@@ -21,14 +21,14 @@
         </div>
         {% endif %}
     </div>
-    <form action="{% url 'home' %}" method="get" class=" border border-2 border-secondary rounded p-2">
-        <div class="row">
+    <form action="{% url 'home' %}" method="get" class=" border border-2 border-secondary rounded px-2 px-sm-3 py-2">
+        <div class="row justify-content-center">
         {% for field in schedule_form %}
-            <div class="col align-self-center">
+            <div class="col-6 col-sm align-self-center">
                 <b>{{ field.label_tag }}</b> {{ field|as_crispy_field }} 
             </div>
         {% endfor %}
-            <div class="col align-self-center">
+            <div class="col align-self-center text-center">
                 <button type="submit" class="btn btn-outline-primary">
                     <i class="bi bi-filter"></i> Filtrer
                 </button>
