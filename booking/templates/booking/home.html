@@ -85,7 +85,11 @@
                     {% else %}
                         <i class="bi bi-stopwatch fs-5"></i>
                     {% endif %}
+                    {% if reg.swimmer is None %}
+                        Inconnu
+                    {% else %}
                         {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
+                    {% endif %}
                     </div>
                 {% endfor %}
                 {% for reg in session.swimmers_registration %}
@@ -103,7 +107,11 @@
                         <i class="bi bi-person-exclamation fs-5"></i>
                         {% endif %}
                     {% endif %}
+                    {% if reg.swimmer is None %}
+                        Inconnu
+                    {% else %}
                         {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
+                    {% endif %}
                     </div>
                 {% endfor %}
                 </div>

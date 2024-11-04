@@ -1,20 +1,10 @@
 import datetime
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from .groups import ClubGroup, RegisterPermission
-
-
-def get_anonymous_user() -> AbstractUser:
-    return get_user_model().objects.get_or_create(
-        username="Anonyme",
-        email="anonyme@anonyme.fr",
-        first_name="Inconnu",
-        last_name="",
-    )[0]
 
 
 def get_current_year() -> int:
@@ -185,7 +175,9 @@ class WeeklySessionHistory(AbstractWeeklySession):
 class AbstractSessionRegistration(models.Model):
     swimmer = models.ForeignKey(
         get_user_model(),
-        on_delete=models.SET(get_anonymous_user),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Nageur",
     )
     session = models.ForeignKey(
@@ -198,6 +190,8 @@ class AbstractSessionRegistration(models.Model):
     swimmer_is_coach = models.BooleanField("Est entraîneur ?", default=False)
 
     def __str__(self) -> str:
+        if self.swimmer is None:
+            return f"(Inconnu) {self.session}"
         return f"({self.swimmer.first_name} {self.swimmer.last_name}) {self.session}"
 
     class Meta:
