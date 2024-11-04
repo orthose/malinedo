@@ -77,22 +77,36 @@
                 <div class="progress mb-1 mt-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-bar overflow-visible text-dark bg-info" style="width: {{ session.registration_rate }}%">{{ session.total_swimmers }}/{{ session.capacity }} ({{ session.registration_rate }}%)</div>
                 </div>
-                {% if session.coaches or session.swimmers %}
                 <div class="collapse" id="showSwimmers" style="font-family: 'Ubuntu Mono';">
-                {% for coach in session.coaches %}
-                    <div>
-                        <i class="bi bi-stopwatch"></i>
-                        {{ coach.first_name }}&nbsp;{{ coach.last_name }}
+                {% for reg in session.coaches_registration %}
+                    <div class="text-truncate overflow-hidden">
+                    {% if reg.is_regular %}
+                        <i class="bi bi-stopwatch-fill fs-5"></i>
+                    {% else %}
+                        <i class="bi bi-stopwatch fs-5"></i>
+                    {% endif %}
+                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
                     </div>
                 {% endfor %}
-                {% for swimmer in session.swimmers %}
-                    <div>
-                        <i class="bi bi-person"></i>
-                        {{ swimmer.first_name }}&nbsp;{{ swimmer.last_name }}
+                {% for reg in session.swimmers_registration %}
+                    <div class="text-truncate overflow-hidden">
+                    {% if forloop.counter <= session.capacity %}
+                        {% if reg.is_regular %}
+                        <i class="bi bi-person-fill fs-5"></i>
+                        {% else %}
+                        <i class="bi bi-person fs-5"></i>
+                        {% endif %}
+                    {% else %}
+                        {% if reg.is_regular %}
+                        <i class="bi bi-person-fill-exclamation fs-5"></i>
+                        {% else %}
+                        <i class="bi bi-person-exclamation fs-5"></i>
+                        {% endif %}
+                    {% endif %}
+                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
                     </div>
                 {% endfor %}
                 </div>
-                {% endif %}
                 {% if is_current_week %}
                 <div id="editSessions" class="collapse">
                     <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mt-2 mb-1">

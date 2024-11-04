@@ -80,14 +80,6 @@ class AbstractWeeklySession(models.Model):
     def registration_rate(self) -> int:
         return round(self.total_swimmers * 100 / self.capacity)
 
-    @property
-    def swimmers(self) -> list[AbstractUser]:
-        pass
-
-    @property
-    def coaches(self) -> list[AbstractUser]:
-        pass
-
     def __str__(self) -> str:
         return f"[{self.GROUP[self.group]}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
 
@@ -129,26 +121,6 @@ class WeeklySession(AbstractWeeklySession):
             session=self, is_cancelled=False, swimmer_is_coach=False
         ).count()
 
-    @property
-    def swimmers(self) -> list[AbstractUser]:
-        return [
-            registration.swimmer
-            for registration in SessionRegistration.objects.filter(
-                session=self,
-                is_cancelled=False,
-                swimmer_is_coach=False,
-            )
-        ]
-
-    @property
-    def coaches(self) -> list[AbstractUser]:
-        return [
-            registration.swimmer
-            for registration in SessionRegistration.objects.filter(
-                session=self, is_cancelled=False, swimmer_is_coach=True
-            )
-        ]
-
     def to_history(self, year: int, week: int) -> "WeeklySessionHistory":
         session = self.__dict__.copy()
         session.pop("id")
@@ -187,32 +159,6 @@ class WeeklySessionHistory(AbstractWeeklySession):
         return SessionRegistrationHistory.objects.filter(
             session=self, is_cancelled=False, swimmer_is_coach=False
         ).count()
-
-    @property
-    def swimmers(self) -> list[AbstractUser]:
-        return [
-            registration.swimmer
-            for registration in SessionRegistrationHistory.objects.filter(
-                session=self,
-                year=self.year,
-                week=self.week,
-                is_cancelled=False,
-                swimmer_is_coach=False,
-            )
-        ]
-
-    @property
-    def coaches(self) -> list[AbstractUser]:
-        return [
-            registration.swimmer
-            for registration in SessionRegistrationHistory.objects.filter(
-                session=self,
-                year=self.year,
-                week=self.week,
-                is_cancelled=False,
-                swimmer_is_coach=True,
-            )
-        ]
 
     def __str__(self) -> str:
         return f"{self.year}-{self.week} " + super().__str__()

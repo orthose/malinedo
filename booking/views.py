@@ -72,6 +72,8 @@ def home(request: HttpRequest) -> HttpResponse:
         sessions = (
             weekly_session_model.objects.filter(**filters)
             .order_by("weekday", "start_hour", "group")
+            # Prefetch se charge de joindre par clé étrangère session
+            # donc pas besoin de préciser les filtres year et week
             .prefetch_related(
                 # Crée le champ swimmer_registration
                 # Si le nageur n'est pas inscrit à la session la liste est vide
@@ -82,6 +84,32 @@ def home(request: HttpRequest) -> HttpResponse:
                         swimmer=request.user
                     ).only("is_regular", "is_cancelled", "swimmer_is_coach"),
                     to_attr="swimmer_registration",
+                )
+            )
+            .prefetch_related(
+                # Liste des entraîneurs triés par création
+                models.Prefetch(
+                    f"{session_registration_model.__name__.lower()}_set",
+                    queryset=session_registration_model.objects.filter(
+                        is_cancelled=False,
+                        swimmer_is_coach=True,
+                    )
+                    .only("swimmer", "is_regular")
+                    .order_by("pk"),
+                    to_attr="coaches_registration",
+                )
+            )
+            .prefetch_related(
+                # Liste des nageurs triés par création
+                models.Prefetch(
+                    f"{session_registration_model.__name__.lower()}_set",
+                    queryset=session_registration_model.objects.filter(
+                        is_cancelled=False,
+                        swimmer_is_coach=False,
+                    )
+                    .only("swimmer", "is_regular")
+                    .order_by("pk"),
+                    to_attr="swimmers_registration",
                 )
             )
         )
