@@ -35,7 +35,7 @@ class ScheduleForm(forms.Form):
     helper = FormHelper()
     helper.form_show_labels = False
 
-    def filter_group_choices(self, user: AbstractUser):
+    def set_group_choices(self, user: AbstractUser):
         choices = [
             (group, verbose_name)
             for group, verbose_name in self.fields["group"].choices

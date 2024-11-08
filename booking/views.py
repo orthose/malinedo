@@ -34,7 +34,7 @@ def home(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    schedule_form.filter_group_choices(request.user)
+    schedule_form.set_group_choices(request.user)
 
     sessions = None
     is_current_week = True

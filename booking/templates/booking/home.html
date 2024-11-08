@@ -59,14 +59,14 @@
                 <div class="d-flex justify-content-between">
                     <div style="min-height: 32px;">[{{ session.group }}]</div>
                     {% if session.swimmer_registration.0.is_regular %}
-                    <div>
+                    <div data-bs-toggle="tooltip" data-bs-placement="top" title="Inscription régulière">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-infinity" viewBox="0 0 16 16">
                             <path d="M5.68 5.792 7.345 7.75 5.681 9.708a2.75 2.75 0 1 1 0-3.916ZM8 6.978 6.416 5.113l-.014-.015a3.75 3.75 0 1 0 0 5.304l.014-.015L8 8.522l1.584 1.865.014.015a3.75 3.75 0 1 0 0-5.304l-.014.015zm.656.772 1.663-1.958a2.75 2.75 0 1 1 0 3.916z"/>
                         </svg>
                     </div>
                     {% endif %}
                     {% if session.is_cancelled %}
-                    <div>
+                    <div data-bs-toggle="tooltip" data-bs-placement="top" title="Séance annulée">
                         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
                             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
                         </svg>
@@ -81,9 +81,9 @@
                 {% for reg in session.coaches_registration %}
                     <div class="text-truncate overflow-hidden">
                     {% if reg.is_regular %}
-                        <i class="bi bi-stopwatch-fill fs-5"></i>
+                        <i class="bi bi-stopwatch-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur régulier"></i>
                     {% else %}
-                        <i class="bi bi-stopwatch fs-5"></i>
+                        <i class="bi bi-stopwatch fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel"></i>
                     {% endif %}
                     {% if reg.swimmer is None %}
                         Inconnu
@@ -96,15 +96,15 @@
                     <div class="text-truncate overflow-hidden">
                     {% if forloop.counter <= session.capacity %}
                         {% if reg.is_regular %}
-                        <i class="bi bi-person-fill fs-5"></i>
+                        <i class="bi bi-person-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur régulier"></i>
                         {% else %}
-                        <i class="bi bi-person fs-5"></i>
+                        <i class="bi bi-person fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur ponctuel"></i>
                         {% endif %}
                     {% else %}
                         {% if reg.is_regular %}
-                        <i class="bi bi-person-fill-exclamation fs-5"></i>
+                        <i class="bi bi-person-fill-exclamation fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur régulier excédentaire"></i>
                         {% else %}
-                        <i class="bi bi-person-exclamation fs-5"></i>
+                        <i class="bi bi-person-exclamation fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur ponctuel excédentaire"></i>
                         {% endif %}
                     {% endif %}
                     {% if reg.swimmer is None %}
@@ -124,25 +124,25 @@
                             {% if not session.is_cancelled %}
                             {% if not session.swimmer_registration %}
                             <button type="submit" name="is_regular" value="true" class="btn btn-outline-success">
-                                <i class="bi bi-infinity"></i> Régulier
+                                <i class="bi bi-infinity fs-5"></i> Régulier
                             </button>
                             <button type="submit" name="is_regular" value="false" class="btn btn-outline-success">
-                                <i class="bi bi-person-add"></i> Ponctuel
+                                <i class="bi bi-person-add fs-5"></i> Ponctuel
                             </button>
                             {% if has_perm_coach %}
                             <input type="checkbox" name="swimmer_is_coach" class="btn-check" id="btn-coach-{{ session.id }}" autocomplete="off">
                             <label class="btn btn-outline-primary" for="btn-coach-{{ session.id }}" type="button">
-                                <i class="bi bi-stopwatch"></i> Entraîneur
+                                <i class="bi bi-stopwatch fs-5"></i> Entraîneur
                             </label>
                             {% endif %}
                             {% else %}
                             {% if not session.swimmer_registration.0.is_cancelled %}
                             <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
-                                <i class="bi bi-person-dash"></i> Annuler
+                                <i class="bi bi-person-dash fs-5"></i> Annuler
                             </button>
                             {% if session.swimmer_registration.0.is_regular %}
                             <button type="submit" name="remove" value="true" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Supprimer
+                                <i class="bi bi-trash fs-5"></i> Supprimer
                             </button>
                             {% endif %}
                             {% endif %}
@@ -159,4 +159,11 @@
     {% endfor %}
     </div>
 </div>
+<!-- Enable tooltips -->
+<script>
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
 {% endblock %}
