@@ -53,37 +53,36 @@ pip install -r requirements-prod.txt
 ## Variables d'environnement
 
 ```bash
-touch config.sh
-chmod 700 config.sh
-nano config.sh
+touch .env
+chmod 700 .env
+nano .env
 ```
 
 ```bash
-export DJANGO_SETTINGS_MODULE=malinedo.settings-prod
+DEBUG=False
+# python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+SECRET_KEY=""
+ALLOWED_HOSTS=127.0.0.1,localhost,domaine.com
 
-export ALLOWED_HOSTS=127.0.0.1,localhost,domaine.com
+ADMIN_URL=admin/ 
+STATIC_ROOT=/var/www/html/malinedo/static/
 
-export ADMIN_URL=admin/ 
-export STATIC_ROOT=/var/www/html/malinedo/static/
+DATABASE_NAME=malinedodb
+DATABASE_USER=malinedo
+DATABASE_PASSWORD=password
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
 
-export DATABASE_NAME=malinedodb
-export DATABASE_USER=malinedo
-export DATABASE_PASSWORD=password
-export DATABASE_HOST=localhost
-export DATABASE_PORT=5432
-
-export EMAIL_HOST=smtp.example.com
-export EMAIL_PORT=1
-export EMAIL_USE_TLS=true
-export EMAIL_HOST_USER=contact@domaine.com
-export EMAIL_HOST_PASSWORD=password
-export EMAIL_USE_SSL=false
-export DEFAULT_FROM_EMAIL=ne-pas-repondre@domaine.com
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=1
+EMAIL_USE_TLS=true
+EMAIL_HOST_USER=contact@domaine.com
+EMAIL_HOST_PASSWORD=password
+EMAIL_USE_SSL=false
+DEFAULT_FROM_EMAIL=ne-pas-repondre@domaine.com
 ```
 
 ## Tâches planifiées
-
-CRON close_registrations, postgre dump
 
 ```bash
 mkdir ~/backup
@@ -92,14 +91,13 @@ crontab -e
 ```
 
 ```
-0 1 * * sat cd ~/malinedo && source config.sh && .venv/bin/python manage.py close_registrations
+0 1 * * sat cd ~/malinedo && .venv/bin/python manage.py close_registrations
 @daily pg_dump -U malinedo malinedodb > ~/backup/malinedodb_$(date +\%F).sql
 ```
 
 ## Initialisation des données
 
 ```bash
-source config.sh
 python manage.py migrate
 # Mettre la même adresse e-mail la 2ème fois
 # sinon cela bloque la création des utilisateurs
@@ -129,7 +127,7 @@ After=network.target
 User=malinedo
 Group=malinedo
 WorkingDirectory=/home/malinedo/malinedo/
-ExecStart=/bin/bash -c "source config.sh && .venv/bin/gunicorn --access-logfile - --bind 127.0.0.1:8000 --workers 3 malinedo.wsgi:application"
+ExecStart=/bin/bash -c ".venv/bin/gunicorn --access-logfile - --bind 127.0.0.1:8000 --workers 3 malinedo.wsgi:application"
 ExecStop=/bin/kill -SIGINT $MAINPID
 RestartSec=60
 
@@ -223,7 +221,7 @@ Les groupes disponibles sont :
 * Compétition N2: Permet de s'inscrire aux séances pour les compétiteurs confirmés.
 
 Accédez à l'interface administrateur via l'URL https://domaine.com/<ADMIN_URL>/.
-La variable `ADMIN_URL` ayant été définie dans `config.sh`.
+La variable `ADMIN_URL` ayant été définie dans `.env`.
 
 Commencez par cliquer sur **Utilisateurs** et donnez les accès aux membres du bureau.
 Pour cela cliquez sur l'utilisateur, ajoutez-lui le groupe **Bureau**

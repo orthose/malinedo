@@ -17,5 +17,7 @@ django-crispy-forms==2.3
     # via
     #   -r requirements.in
     #   crispy-bootstrap5
+python-dotenv==1.0.1
+    # via -r requirements.in
 sqlparse==0.5.1
     # via django

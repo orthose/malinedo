@@ -8,6 +8,14 @@ pip install pip-tools
 pip-sync requirements-dev.txt
 ```
 
+Créer un fichier `.env` à la racine du projet.
+
+```
+DEBUG=True
+SECRET_KEY="django-insecure-z&aa%=c&ho$wsb*t7-zaiwt@_180^lp#52j*qcy^lif#mab74f"
+ALLOWED_HOSTS=127.0.0.1,localhost
+```
+
 # Initialisation de la base de données
 
 ```bash
