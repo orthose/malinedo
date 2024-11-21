@@ -1,4 +1,5 @@
 import datetime
+from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from booking.models import (
@@ -25,9 +26,8 @@ class Command(BaseCommand):
     en fin de semaine
     """
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        # TODO: Mettre le site en maintenance ?
-
         year = GlobalSetting.get_year()
         week = GlobalSetting.get_week()
 
