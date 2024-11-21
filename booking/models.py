@@ -184,7 +184,7 @@ class AbstractSessionRegistration(models.Model):
     def __str__(self) -> str:
         if self.swimmer is None:
             return f"(Inconnu) {self.session}"
-        return f"({self.swimmer.first_name} {self.swimmer.last_name}) {self.session}"
+        return f"({self.swimmer.first_name} {self.swimmer.last_name.upper()}) {self.session}"
 
     class Meta:
         abstract = True

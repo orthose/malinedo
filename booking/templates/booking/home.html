@@ -88,7 +88,7 @@
                     {% if reg.swimmer is None %}
                         Inconnu
                     {% else %}
-                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
+                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     {% endif %}
                     </div>
                 {% endfor %}
@@ -110,7 +110,7 @@
                     {% if reg.swimmer is None %}
                         Inconnu
                     {% else %}
-                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name }}
+                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     {% endif %}
                     </div>
                 {% endfor %}
