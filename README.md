@@ -54,7 +54,7 @@ pip install -r requirements-prod.txt
 
 ```bash
 touch .env
-chmod 700 .env
+chmod 600 .env
 nano .env
 ```
 

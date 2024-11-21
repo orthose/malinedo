@@ -40,7 +40,8 @@ class Command(BaseCommand):
         SessionRegistrationHistory.objects.bulk_create(
             [
                 registration.to_history(year, week)
-                for registration in SessionRegistration.objects.all()
+                # Création de l'historique des inscriptions dans l'ordre de création original
+                for registration in SessionRegistration.objects.all().order_by("pk")
             ]
         )
 

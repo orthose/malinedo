@@ -1,10 +1,7 @@
+import datetime
 from django.core.management.base import BaseCommand
 
-from booking.models import (
-    GlobalSetting,
-    get_current_year,
-    get_current_week,
-)
+from booking.models import GlobalSetting
 
 
 class Command(BaseCommand):
@@ -13,6 +10,6 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        GlobalSetting.set_year(get_current_year())
-        GlobalSetting.set_week(get_current_week())
+        GlobalSetting.set_year(datetime.date.today().year)
+        GlobalSetting.set_week(datetime.date.today().isocalendar().week)
         GlobalSetting.set_is_booking_active(True)

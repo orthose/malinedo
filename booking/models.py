@@ -7,16 +7,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from .groups import ClubGroup, RegisterPermission
 
 
-def get_current_year() -> int:
-    return datetime.date.today().year
-
-
 def get_year_field() -> models.Field:
     return models.IntegerField("année")
-
-
-def get_current_week() -> int:
-    return datetime.date.today().isocalendar().week
 
 
 def get_week_field() -> models.Field:
@@ -218,12 +210,10 @@ class SessionRegistration(AbstractSessionRegistration):
         registration = self.__dict__.copy()
         registration.pop("id")
         registration.pop("_state")
-        registration["year"] = year
-        registration["week"] = week
         session = WeeklySession.objects.get(pk=registration["session_id"])
         registration["session_id"] = WeeklySessionHistory.objects.get(
-            year=get_current_year(),
-            week=get_current_week(),
+            year=year,
+            week=week,
             group=session.group,
             weekday=session.weekday,
             start_hour=session.start_hour,
@@ -273,8 +263,6 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
         WeeklySessionHistory,
         on_delete=models.CASCADE,
     )
-    year = get_year_field()
-    week = get_week_field()
 
     class Meta:
         verbose_name = "historique inscription session"
@@ -283,8 +271,6 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
             models.UniqueConstraint(
                 "swimmer",
                 "session",
-                "year",
-                "week",
                 name="unique_swimmer_for_one_session_history",
             ),
         ]
