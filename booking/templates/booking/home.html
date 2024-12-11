@@ -5,22 +5,6 @@
 
 {% block content %}
 <div class="container mt-3">
-    <div class="row mb-3 justify-content-start">
-        <div class="col-auto align-self-center">
-            <input type="checkbox" class="btn-check" id="btn-show-swimmers" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btn-show-swimmers" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers" aria-expanded="false" aria-controls="showSwimmers">
-                <i class="bi bi-people-fill"></i> Nageurs
-            </label>
-        </div>
-        {% if is_current_week %}
-        <div class="col-auto align-self-center">
-            <input type="checkbox" class="btn-check" id="btn-edit-sessions" autocomplete="off">
-            <label class="btn btn-outline-primary" for="btn-edit-sessions" type="button" data-bs-toggle="collapse" data-bs-target="#editSessions" aria-expanded="false" aria-controls="editSessions">
-                <i class="bi bi-pencil-square"></i> Éditer
-            </label>
-        </div>
-        {% endif %}
-    </div>
     <form action="{% url 'home' %}" method="get" class=" border border-2 border-secondary rounded px-2 px-sm-3 py-2">
         <div class="row justify-content-center">
         {% for field in schedule_form %}
@@ -56,28 +40,43 @@
                 bg-light border-secondary
                 {% endif %}
                 ">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <div style="min-height: 32px;">[{{ session.group }}]</div>
                     {% if session.swimmer_registration.0.is_regular %}
                     <div data-bs-toggle="tooltip" data-bs-placement="top" title="Inscription régulière">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-infinity" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-infinity me-1" viewBox="0 0 16 16">
                             <path d="M5.68 5.792 7.345 7.75 5.681 9.708a2.75 2.75 0 1 1 0-3.916ZM8 6.978 6.416 5.113l-.014-.015a3.75 3.75 0 1 0 0 5.304l.014-.015L8 8.522l1.584 1.865.014.015a3.75 3.75 0 1 0 0-5.304l-.014.015zm.656.772 1.663-1.958a2.75 2.75 0 1 1 0 3.916z"/>
                         </svg>
                     </div>
                     {% endif %}
                     {% if session.is_cancelled %}
                     <div data-bs-toggle="tooltip" data-bs-placement="top" title="Séance annulée">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-lock me-1" viewBox="0 0 16 16">
                             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
                         </svg>
                     </div>
                     {% endif %}
                 </div>
+                <div class="text-center fw-bold">{{ weekday }} {{ session.french_date }}</div>
                 <div class="fs-2 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
                 <div class="progress mb-1 mt-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-bar overflow-visible text-dark bg-info" style="width: {{ session.registration_rate }}%">{{ session.total_swimmers }}/{{ session.capacity }} ({{ session.registration_rate }}%)</div>
                 </div>
-                <div class="collapse" id="showSwimmers" style="font-family: 'Ubuntu Mono';">
+                <div class="btn-group mt-2 mb-1 w-100" role="group">
+                    <input type="checkbox" class="btn-check" id="btn-show-swimmers-{{ session.id }}" autocomplete="off">
+                    <label class="btn btn-outline-{% if session.background_is_colored %}light{% else %}dark{% endif %} px-2 py-1" 
+                    for="btn-show-swimmers-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers{{ session.id }}" aria-expanded="false" aria-controls="showSwimmers{{ session.id }}">
+                        <i class="bi bi-people-fill"></i> Nageurs
+                    </label>
+                {% if session.is_editable %}
+                    <input type="checkbox" class="btn-check" id="btn-edit-sessions-{{ session.id }}" autocomplete="off">
+                    <label class="btn btn-outline-{% if session.background_is_colored %}light{% else %}dark{% endif %} px-2 py-1" 
+                    for="btn-edit-sessions-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#editSession{{ session.id }}" aria-expanded="false" aria-controls="editSessions{{ session.id }}">
+                        <i class="bi bi-pencil-square"></i> Modifier
+                    </label>
+                {% endif %}
+                </div>
+                <div class="collapse" id="showSwimmers{{ session.id }}" style="font-family: 'Ubuntu Mono';">
                 {% for reg in session.coaches_registration %}
                     <div class="text-truncate overflow-hidden">
                     {% if reg.is_regular %}
@@ -116,7 +115,7 @@
                 {% endfor %}
                 </div>
                 {% if is_current_week %}
-                <div id="editSessions" class="collapse">
+                <div id="editSession{{ session.id }}" class="collapse">
                     <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mt-2 mb-1">
                         {% csrf_token %}
                         <input type="hidden" name="session_id" value="{{ session.id }}">

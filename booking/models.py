@@ -62,6 +62,10 @@ class AbstractWeeklySession(models.Model):
     def registration_rate(self) -> int:
         return round(self.total_swimmers * 100 / self.capacity)
 
+    @property
+    def french_date(self) -> str:
+        pass
+
     def __str__(self) -> str:
         return f"[{self.GROUP[self.group]}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
 
@@ -103,6 +107,13 @@ class WeeklySession(AbstractWeeklySession):
             session=self, is_cancelled=False, swimmer_is_coach=False
         ).count()
 
+    @property
+    def french_date(self) -> str:
+        return datetime.datetime.strptime(
+            f"{GlobalSetting.get_year()}-{GlobalSetting.get_week()}-{self.weekday}",
+            "%Y-%W-%w",
+        ).strftime("%d/%m/%Y")
+
     def to_history(self, year: int, week: int) -> "WeeklySessionHistory":
         session = self.__dict__.copy()
         session.pop("id")
@@ -141,6 +152,13 @@ class WeeklySessionHistory(AbstractWeeklySession):
         return SessionRegistrationHistory.objects.filter(
             session=self, is_cancelled=False, swimmer_is_coach=False
         ).count()
+
+    @property
+    def french_date(self) -> str:
+        return datetime.datetime.strptime(
+            f"{self.year}-{self.week}-{self.weekday}",
+            "%Y-%W-%w",
+        ).strftime("%d/%m/%Y")
 
     def __str__(self) -> str:
         return f"{self.year}-{self.week} " + super().__str__()

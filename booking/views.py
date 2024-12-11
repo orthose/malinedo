@@ -119,6 +119,22 @@ def home(request: HttpRequest) -> HttpResponse:
 
     for session in sessions:
         session.group = WeeklySession.GROUP[session.group]
+        setattr(
+            session,
+            "background_is_colored",
+            session.is_cancelled or session.swimmer_registration,
+        )
+        setattr(
+            session,
+            "is_editable",
+            is_current_week
+            and not session.is_cancelled
+            and (
+                not session.swimmer_registration
+                or not session.swimmer_registration[0].is_cancelled
+            ),
+        )
+
         weekday_sessions[WeeklySession.WEEKDAY[session.weekday]].append(session)
 
     context = {
