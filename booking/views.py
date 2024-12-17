@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from .models import (
+    AbstractWeeklySession,
     RegisterPermission,
     WeeklySession,
     SessionRegistration,
@@ -18,37 +19,39 @@ from .forms import (
 
 
 @login_required
-def home(request: HttpRequest) -> HttpResponse:
-    weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
-
+def schedule(request: HttpRequest, show_history_filters: bool) -> HttpResponse:
+    # Formulaire de filtrage
     schedule_form = (
         ScheduleForm(request.GET)
         if len(request.GET) > 0
         else ScheduleForm(
             {
-                "sessions": "my",
-                "group": "A",
+                "mysessions": request.session.get("mysessions", default=False),
                 "year": GlobalSetting.get_year(),
                 "week": GlobalSetting.get_week(),
             }
         )
     )
 
-    schedule_form.set_group_choices(request.user)
-
     sessions = None
     is_current_week = True
+    # Vérification du formulaire
     if schedule_form.is_valid():
         filters = {}
         weekly_session_model = WeeklySession
         session_registration_model = SessionRegistration
 
+        # Enregistrement dans la session utilisateur du filtre des séances
+        request.session["mysessions"] = schedule_form.cleaned_data["mysessions"]
+
+        # Semaine courante
         if (
             schedule_form.cleaned_data["year"] == GlobalSetting.get_year()
             and schedule_form.cleaned_data["week"] == GlobalSetting.get_week()
         ):
             weekly_session_model = WeeklySession
             session_registration_model = SessionRegistration
+        # Historique
         else:
             is_current_week = False
             weekly_session_model = WeeklySessionHistory
@@ -56,19 +59,20 @@ def home(request: HttpRequest) -> HttpResponse:
             filters["year"] = schedule_form.cleaned_data["year"]
             filters["week"] = schedule_form.cleaned_data["week"]
 
-        match schedule_form.cleaned_data["sessions"]:
-            case ScheduleForm.SessionFilter.MY:
-                filters[f"{session_registration_model.__name__.lower()}__swimmer"] = (
-                    request.user
-                )
+        # Filtre des séances du nageur
+        if schedule_form.cleaned_data["mysessions"]:
+            filters[f"{session_registration_model.__name__.lower()}__swimmer"] = (
+                request.user
+            )
 
-        if schedule_form.cleaned_data["group"] != ScheduleForm.GroupFilter.ALL:
-            filters["group"] = schedule_form.cleaned_data["group"]
-        else:
-            groups = [group for group, _ in schedule_form.fields["group"].choices]
-            groups.remove("A")
-            filters["group__in"] = groups
+        # Filtre des groupes du nageur
+        filters["group__in"] = [
+            group
+            for group in AbstractWeeklySession.GROUP.keys()
+            if request.user.has_perm(RegisterPermission.get_perm(group))
+        ]
 
+        # Requête à la base de données des séances
         sessions = (
             weekly_session_model.objects.filter(**filters)
             .order_by("weekday", "start_hour", "group")
@@ -114,11 +118,16 @@ def home(request: HttpRequest) -> HttpResponse:
             )
         )
 
+    # Formulaire invalide
     else:
         sessions = WeeklySession.objects.none()
 
+    # Séances par jour de la semaine
+    weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
+
     for session in sessions:
         session.group = WeeklySession.GROUP[session.group]
+        # Attributs dynamiques de session pour le template
         setattr(
             session,
             "background_is_colored",
@@ -137,14 +146,28 @@ def home(request: HttpRequest) -> HttpResponse:
 
         weekday_sessions[WeeklySession.WEEKDAY[session.weekday]].append(session)
 
+    # Attributs HTML pour les champs de formulaire du template
+    schedule_form.fields["mysessions"].widget.attrs.update(
+        {
+            "class": "btn-check",
+            "autocomplete": "off",
+            # Soumission automatique du formulaire
+            "onclick": "this.form.submit()",
+        }
+    )
+    schedule_form.fields["year"].widget.attrs["class"] = "numberinput form-control"
+    schedule_form.fields["week"].widget.attrs["class"] = "numberinput form-control"
+
+    # Variables injectées dans le template
     context = {
         "schedule_form": schedule_form,
+        "show_history_filters": show_history_filters,
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
     }
 
-    return render(request, "booking/home.html", context)
+    return render(request, "booking/schedule.html", context)
 
 
 @login_required

@@ -8,17 +8,8 @@ asgiref==3.8.1
     # via
     #   -r requirements.txt
     #   django
-crispy-bootstrap5==2024.10
-    # via -r requirements.txt
 django==5.1.2
-    # via
-    #   -r requirements.txt
-    #   crispy-bootstrap5
-    #   django-crispy-forms
-django-crispy-forms==2.3
-    # via
-    #   -r requirements.txt
-    #   crispy-bootstrap5
+    # via -r requirements.txt
 python-dotenv==1.0.1
     # via -r requirements.txt
 ruff==0.7.1

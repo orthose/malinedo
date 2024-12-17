@@ -19,20 +19,26 @@
                     </span>   
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link mx-2" href="{% url 'home' %}">Accueil</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mx-2" href="{% url 'history' %}">Historique</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link mx-2" href="{% url 'notice' %}">Notice</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Profil</a>
+                    <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Mot&nbsp;de&nbsp;passe</a>
                 </li>
                 {% if user.is_board_member %}
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank">Admin</a>
+                    <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank">Administrateur</a>
                 </li>
                 {% endif %}
             </ul>
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto d-flex flex-row">
                 <li class="nav-item">
-                    <a class="mx-2 btn btn-outline-danger mb-2 mb-lg-0" href="https://github.com/orthose/malinedo/issues" target="_blank">
+                    <a class="me-2 btn btn-outline-danger" href="https://github.com/orthose/malinedo/issues" target="_blank">
                         <i class="bi bi-bug"></i> Bug
                     </a>
                 </li>

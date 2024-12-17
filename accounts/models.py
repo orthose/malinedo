@@ -18,4 +18,4 @@ class User(AbstractUser):
 
     @property
     def is_board_member(self) -> bool:
-        return self.groups.filter(name=ClubGroup.BOARD)
+        return self.groups.filter(name=ClubGroup.BOARD).exists()

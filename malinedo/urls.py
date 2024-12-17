@@ -26,5 +26,5 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls, name="admin"),
     path("", include("accounts.urls")),
     path("", include("booking.urls")),
-    path("", booking.views.home),
+    path("", booking.views.schedule, {"show_history_filters": False}),
 ]
