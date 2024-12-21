@@ -21,5 +21,5 @@ class EditSessionRegistrationForm(forms.Form):
     # Annuler une inscription
     is_cancelled = forms.BooleanField(label="Annulée ?", required=False)
     swimmer_is_coach = forms.BooleanField(label="Entraîneur ?", required=False)
-    # Supprimer une inscription régulière
+    # Supprimer une inscription
     remove = forms.BooleanField(label="Supprimer ?", required=False)

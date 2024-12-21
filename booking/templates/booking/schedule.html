@@ -69,7 +69,7 @@
                         for="btn-show-swimmers-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers{{ session.id }}" aria-expanded="false" aria-controls="showSwimmers{{ session.id }}">
                             <i class="bi bi-people-fill"></i>
                         </label>
-                    {% if session.is_editable %}
+                    {% if is_current_week and not session.is_cancelled %}
                         <input type="checkbox" class="btn-check" id="btn-edit-sessions-{{ session.id }}" autocomplete="off">
                         <label class="btn btn-outline-{% if session.background_is_colored %}light{% else %}dark{% endif %} px-2 py-1 me-1" 
                         for="btn-edit-sessions-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#editSession{{ session.id }}" aria-expanded="false" aria-controls="editSessions{{ session.id }}">
@@ -100,7 +100,7 @@
                 <div class="progress mb-1 mt-3 mb-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-bar overflow-visible text-dark bg-info" style="width: {{ session.registration_rate }}%">{{ session.total_swimmers }}/{{ session.capacity }} ({{ session.registration_rate }}%)</div>
                 </div>
-                <div class="collapse" id="showSwimmers{{ session.id }}" style="font-family: 'Ubuntu Mono';">
+                <div class="collapse mb-2" id="showSwimmers{{ session.id }}" style="font-family: 'Ubuntu Mono';">
                 {% for reg in session.coaches_registration %}
                     <div class="text-truncate overflow-hidden">
                     {% if reg.is_regular %}
@@ -138,14 +138,13 @@
                     </div>
                 {% endfor %}
                 </div>
-                {% if is_current_week %}
+            {% if is_current_week and not session.is_cancelled  %}
                 <div id="editSession{{ session.id }}" class="collapse">
-                    <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mt-2 mb-1">
+                    <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mb-2">
                         {% csrf_token %}
                         <input type="hidden" name="session_id" value="{{ session.id }}">
                         <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription">
-                            {% if not session.is_cancelled %}
-                            {% if not session.swimmer_registration %}
+                        {% if not session.swimmer_registration %}
                             <button type="submit" name="is_regular" value="true" class="btn btn-outline-success">
                                 <i class="bi bi-infinity fs-5"></i> Régulier
                             </button>
@@ -158,23 +157,19 @@
                                 <i class="bi bi-stopwatch fs-5"></i> Entraîneur
                             </label>
                             {% endif %}
-                            {% else %}
-                            {% if not session.swimmer_registration.0.is_cancelled %}
+                        {% elif not session.swimmer_registration.0.is_cancelled %}
                             <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
                                 <i class="bi bi-person-dash fs-5"></i> Annuler
                             </button>
-                            {% if session.swimmer_registration.0.is_regular %}
-                            <button type="submit" name="remove" value="true" class="btn btn-danger">
+                        {% elif session.swimmer_registration.0.is_cancelled %}
+                            <button type="submit" name="remove" value="true" class="btn btn-outline-light">
                                 <i class="bi bi-trash fs-5"></i> Supprimer
                             </button>
-                            {% endif %}
-                            {% endif %}
-                            {% endif %}
-                            {% endif %}
+                        {% endif %}
                         </div>
                     </form>
                 </div>
-                {% endif %}
+            {% endif %}
                 </div>
             {% endfor %}
         </div>

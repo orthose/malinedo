@@ -133,16 +133,6 @@ def schedule(request: HttpRequest, show_history_filters: bool) -> HttpResponse:
             "background_is_colored",
             session.is_cancelled or session.swimmer_registration,
         )
-        setattr(
-            session,
-            "is_editable",
-            is_current_week
-            and not session.is_cancelled
-            and (
-                not session.swimmer_registration
-                or not session.swimmer_registration[0].is_cancelled
-            ),
-        )
 
         weekday_sessions[WeeklySession.WEEKDAY[session.weekday]].append(session)
 
@@ -210,9 +200,12 @@ def edit(request: HttpRequest) -> HttpResponse:
                 )
 
             if form.cleaned_data["remove"]:
-                SessionRegistration.objects.filter(
+                registration = SessionRegistration.objects.filter(
                     swimmer=request.user, session=session
-                ).delete()
+                )
+                # On ne peut supprimer une inscription que si on l'a annulée
+                if registration.exists() and registration[0].is_cancelled:
+                    registration[0].delete()
 
             return redirect(request.GET["next"])
 
