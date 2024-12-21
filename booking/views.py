@@ -155,6 +155,7 @@ def schedule(request: HttpRequest, show_history_filters: bool) -> HttpResponse:
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
+        "groups": request.user.groups.order_by("pk").all(),
     }
 
     return render(request, "booking/schedule.html", context)
