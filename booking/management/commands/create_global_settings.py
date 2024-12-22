@@ -12,4 +12,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         GlobalSetting.set_year(datetime.date.today().year)
         GlobalSetting.set_week(datetime.date.today().isocalendar().week)
-        GlobalSetting.set_is_booking_active(True)

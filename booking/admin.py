@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.http import HttpRequest
+from django.db.models.query import QuerySet
 
 from .models import (
     WeeklySession,
@@ -19,6 +21,15 @@ class WeeklySessionAdmin(admin.ModelAdmin):
         "weekday",
         "group",
     ]
+    actions = ["lock_sessions", "unlock_sessions"]
+
+    @admin.action(description="Verrouiller les sessions hebdomadaires sélectionnées")
+    def lock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
+        queryset.update(is_cancelled=True)
+
+    @admin.action(description="Déverrouiller les sessions hebdomadaires sélectionnées")
+    def unlock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
+        queryset.update(is_cancelled=False)
 
 
 class WeeklySessionHistoryAdmin(admin.ModelAdmin):

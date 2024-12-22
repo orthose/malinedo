@@ -298,7 +298,6 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
 class GlobalSetting(models.Model):
     CURRENT_YEAR = "CURRENT_YEAR"
     CURRENT_WEEK = "CURRENT_WEEK"
-    IS_BOOKING_ACTIVE = "IS_BOOKING_ACTIVE"
     TYPE = {
         "str": "String",
         "int": "Integer",
@@ -354,11 +353,3 @@ class GlobalSetting(models.Model):
     @classmethod
     def set_week(cls, week: int):
         cls.set_value(cls.CURRENT_WEEK, week, "int")
-
-    @classmethod
-    def get_is_booking_active(cls) -> bool:
-        return cls.get_value(cls.IS_BOOKING_ACTIVE)
-
-    @classmethod
-    def set_is_booking_active(cls, is_active: bool):
-        cls.set_value(cls.IS_BOOKING_ACTIVE, is_active, "bool")
