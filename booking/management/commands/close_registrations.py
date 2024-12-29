@@ -55,7 +55,7 @@ class Command(BaseCommand):
         SessionRegistration.objects.update(is_cancelled=False)
 
         ### Ouverture des inscriptions pour la semaine suivante ###
-        monday = datetime.datetime.strptime(f"{year}-{week}-1", "%Y-%W-%w")
+        monday = datetime.datetime.fromisocalendar(year, week, 1)
         dt_next_monday = monday + datetime.timedelta(days=7)
         next_monday = dt_next_monday.isocalendar()
         GlobalSetting.set_year(next_monday.year)

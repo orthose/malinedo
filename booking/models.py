@@ -109,9 +109,10 @@ class WeeklySession(AbstractWeeklySession):
 
     @property
     def french_date(self) -> str:
-        return datetime.datetime.strptime(
-            f"{GlobalSetting.get_year()}-{GlobalSetting.get_week()}-{self.weekday}",
-            "%Y-%W-%w",
+        return datetime.datetime.fromisocalendar(
+            GlobalSetting.get_year(),
+            GlobalSetting.get_week(),
+            self.weekday,
         ).strftime("%d/%m/%Y")
 
     def to_history(self, year: int, week: int) -> "WeeklySessionHistory":
@@ -155,9 +156,10 @@ class WeeklySessionHistory(AbstractWeeklySession):
 
     @property
     def french_date(self) -> str:
-        return datetime.datetime.strptime(
-            f"{self.year}-{self.week}-{self.weekday}",
-            "%Y-%W-%w",
+        return datetime.datetime.fromisocalendar(
+            self.year,
+            self.week,
+            self.weekday,
         ).strftime("%d/%m/%Y")
 
     def __str__(self) -> str:
