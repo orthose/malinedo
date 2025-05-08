@@ -3,14 +3,18 @@
 {% block title %}Accueil{% endblock %}
 
 {% block content %}
+<script>
+function toggle_collapse_button(button) {
+    localStorage.setItem("showFilters", 
+        JSON.stringify(!JSON.parse(localStorage.getItem("showFilters")))
+    );
+    new bootstrap.Button(button).toggle();
+}
+</script>
 <div class="container px-4 mt-3">
-{% if show_history_filters %}
-    <form action="{% url 'history' %}" method="get">
-{% else %}
     <form action="{% url 'home' %}" method="get">
-{% endif %}
         <div class="row mb-3 justify-content-start">
-            <div class="col-auto align-self-center px-0">
+            <div class="col-auto align-self-center">
                 {{ schedule_form.mysessions }}
                 <label class="btn btn-outline-primary" for="{{ schedule_form.mysessions.auto_id }}" type="button">
                         <i class="bi bi-calendar-week"></i> {{ schedule_form.mysessions.label }}
@@ -26,9 +30,15 @@
                     {% endfor %}
                 </ul>
             </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" id="btn-show-filters" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="false" aria-controls="filters"
+                    onclick="toggle_collapse_button(this)">
+                    <i class="bi bi-filter"></i> Filtres
+                </button>
+            </div>
         </div>
-        <div class="border border-2 border-secondary rounded mb-3 px-sm-3 py-3 row justify-content-center">
-        {% if show_history_filters %}
+        <div class="collapse border border-2 border-secondary rounded mb-3 px-sm-3 py-3 row justify-content-center" id="filters" style="transition: none;">
             <div class="col-6 col-sm align-self-center">
                 <b>{{ schedule_form.week.label_tag }}</b>
                 <div class="mb-3">{{ schedule_form.week }}</div> 
@@ -42,14 +52,12 @@
                     <i class="bi bi-search"></i> Consulter
                 </button>
             </div>
-        {% else %}
+        </div>
+        <div class="border border-2 border-secondary rounded mb-3 px-sm-3 py-3 row justify-content-center">
             <h1 class="fs-2 fw-normal text-center">
                 {{ schedule_form.week.label|upper }}&nbsp;<b class="fs-1">{{ schedule_form.week.value }}</b>
                 {{ schedule_form.year.label|upper }}&nbsp;<b class="fs-1">{{ schedule_form.year.value }}</b>
             </h1>
-            {{ schedule_form.year.as_hidden }}
-            {{ schedule_form.week.as_hidden }}
-        {% endif %}
         </div>
     </form>
 </div>
@@ -193,5 +201,13 @@ var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggl
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 })
+</script>
+<!-- Load filters button state -->
+<script>
+if (JSON.parse(localStorage.getItem("showFilters"))) {
+    const button = document.getElementById("btn-show-filters");
+    new bootstrap.Button(button).toggle();
+    new bootstrap.Collapse(button.getAttribute("data-bs-target")).toggle();
+}
 </script>
 {% endblock %}

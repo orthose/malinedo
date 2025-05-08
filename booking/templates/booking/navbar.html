@@ -22,9 +22,6 @@
                     <a class="nav-link mx-2" href="{% url 'home' %}">Accueil</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'history' %}">Historique</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Mot&nbsp;de&nbsp;passe</a>
                 </li>
                 {% if user.is_board_member %}

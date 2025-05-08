@@ -19,7 +19,7 @@ from .forms import (
 
 
 @login_required
-def schedule(request: HttpRequest, show_history_filters: bool) -> HttpResponse:
+def schedule(request: HttpRequest) -> HttpResponse:
     # Formulaire de filtrage
     schedule_form = (
         ScheduleForm(request.GET)
@@ -151,7 +151,6 @@ def schedule(request: HttpRequest, show_history_filters: bool) -> HttpResponse:
     # Variables injectées dans le template
     context = {
         "schedule_form": schedule_form,
-        "show_history_filters": show_history_filters,
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
         "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
