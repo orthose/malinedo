@@ -2,10 +2,10 @@ from django.db import models
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from typing import cast
 
+from accounts.models import User
 from .models import (
-    AbstractWeeklySession,
-    RegisterPermission,
     WeeklySession,
     SessionRegistration,
     WeeklySessionHistory,
@@ -20,6 +20,11 @@ from .forms import (
 
 @login_required
 def schedule(request: HttpRequest) -> HttpResponse:
+    request.user = cast(User, request.user)
+
+    year = GlobalSetting.get_year()
+    week = GlobalSetting.get_week()
+
     # Formulaire de filtrage
     schedule_form = (
         ScheduleForm(request.GET)
@@ -27,8 +32,8 @@ def schedule(request: HttpRequest) -> HttpResponse:
         else ScheduleForm(
             {
                 "mysessions": request.session.get("mysessions", default=False),
-                "year": GlobalSetting.get_year(),
-                "week": GlobalSetting.get_week(),
+                "year": year,
+                "week": week,
             }
         )
     )
@@ -46,8 +51,8 @@ def schedule(request: HttpRequest) -> HttpResponse:
 
         # Semaine courante
         if (
-            schedule_form.cleaned_data["year"] == GlobalSetting.get_year()
-            and schedule_form.cleaned_data["week"] == GlobalSetting.get_week()
+            schedule_form.cleaned_data["year"] == year
+            and schedule_form.cleaned_data["week"] == week
         ):
             weekly_session_model = WeeklySession
             session_registration_model = SessionRegistration
@@ -66,11 +71,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
             )
 
         # Filtre des groupes du nageur
-        filters["group__in"] = [
-            group
-            for group in AbstractWeeklySession.GROUP.keys()
-            if request.user.has_perm(RegisterPermission.get_perm(group))
-        ]
+        filters["group__group__in"] = request.user.get_pk_groups()
 
         # Requête à la base de données des séances
         sessions = (
@@ -126,7 +127,6 @@ def schedule(request: HttpRequest) -> HttpResponse:
     weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
 
     for session in sessions:
-        session.group = WeeklySession.GROUP[session.group]
         # Attributs dynamiques de session pour le template
         setattr(
             session,
@@ -153,7 +153,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
         "schedule_form": schedule_form,
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
-        "has_perm_coach": request.user.has_perm("booking." + RegisterPermission.COACH),
+        "is_coach": request.user.is_coach,
         "groups": request.user.groups.order_by("pk").all(),
     }
 
@@ -162,6 +162,8 @@ def schedule(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def edit(request: HttpRequest) -> HttpResponse:
+    request.user = cast(User, request.user)
+
     if request.method == "POST" and "next" in request.GET:
         form = EditSessionRegistrationForm(request.POST)
 
@@ -177,12 +179,9 @@ def edit(request: HttpRequest) -> HttpResponse:
 
             if (
                 # Si le nageur veut s'inscire en tant qu'entraîneur en a-t-il la permission ?
-                (
-                    not form.cleaned_data["swimmer_is_coach"]
-                    or request.user.has_perm("booking." + RegisterPermission.COACH)
-                )
+                (not form.cleaned_data["swimmer_is_coach"] or request.user.is_coach)
                 # Est-ce que la nageur a la permission de s'inscrire en fonction de ses groupes ?
-                and request.user.has_perm(RegisterPermission.get_perm(session.group))
+                and session.group.group.pk in request.user.get_pk_groups()
                 # S'il s'agit d'une inscription est-ce que le nageur a déjà un entraînement prévu à la même heure le même jour ?
                 and (
                     "is_regular" not in fields

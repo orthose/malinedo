@@ -3,12 +3,17 @@ from django.http import HttpRequest
 from django.db.models.query import QuerySet
 
 from .models import (
+    SessionGroup,
     WeeklySession,
     WeeklySessionHistory,
     SessionRegistration,
     SessionRegistrationHistory,
     GlobalSetting,
 )
+
+
+class SessionGroupAdmin(admin.ModelAdmin):
+    list_filter = ["group"]
 
 
 class WeeklySessionAdmin(admin.ModelAdmin):
@@ -78,6 +83,7 @@ class SessionRegistrationHistoryAdmin(admin.ModelAdmin):
     ]
 
 
+admin.site.register(SessionGroup, SessionGroupAdmin)
 admin.site.register(WeeklySession, WeeklySessionAdmin)
 admin.site.register(WeeklySessionHistory, WeeklySessionHistoryAdmin)
 admin.site.register(SessionRegistration, SessionRegistrationAdmin)

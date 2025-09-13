@@ -210,15 +210,18 @@ est le prénom en minuscule de l'adhérent.
 Lors de votre première connexion modifiez votre mot de passe
 en cliquant sur **Profil**.
 
-## Attribution des groupes
+## Création des groupes
 
-Les groupes disponibles sont :
+Par défaut les groupes disponibles sont :
 * Bureau: Ajoute le lien vers l'interface d'administration dans la barre de navigation.
-* Entraîneur: Permet de s'inscrire en tant qu'entraîneur aux séances. 
-* Loisir: Permet de s'inscrire aux séances de loisir.
-* Jeune: Permet de s'inscrire aux séances de compétition pour les jeunes.
-* Compétition N1: Permet de s'inscrire aux séances pour les compétiteurs classiques.
-* Compétition N2: Permet de s'inscrire aux séances pour les compétiteurs confirmés.
+* Entraîneur: Permet de s'inscrire en tant qu'entraîneur aux séances.
+
+Une séance d'entraînement correspond à un groupe de niveau de nage.
+Les groupes de niveau de nage (ex: Loisir, Jeune, Compétition)
+doivent d'abord être créés dans le modèle **Groupes** puis ajoutés dans **Groupes de nage**
+avec le super-utilisateur.
+
+## Attribution des groupes
 
 Accédez à l'interface administrateur via l'URL https://domaine.com/<ADMIN_URL>/.
 La variable `ADMIN_URL` ayant été définie dans `.env`.

@@ -112,7 +112,7 @@ function toggle_collapse_button(button) {
                     {% endif %}
                     </div>
                 </div>
-                <div class="fs-6 text-center" style="min-height: 32px;">[{{ session.group }}]</div>
+                <div class="fs-6 text-center" style="min-height: 32px;">[{{ session.group_name }}]</div>
                 <div class="fs-5 text-center">{{ weekday }} {{ session.french_date }}</div>
                 <div class="fs-1 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
                 <div class="progress mb-1 mt-3 mb-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
@@ -169,7 +169,7 @@ function toggle_collapse_button(button) {
                             <button type="submit" name="is_regular" value="false" class="btn btn-outline-success">
                                 <i class="bi bi-person-add fs-5"></i> Ponctuel
                             </button>
-                            {% if has_perm_coach %}
+                            {% if is_coach %}
                             <input type="checkbox" name="swimmer_is_coach" class="btn-check" id="btn-coach-{{ session.id }}" autocomplete="off">
                             <label class="btn btn-outline-primary" for="btn-coach-{{ session.id }}" type="button">
                                 <i class="bi bi-stopwatch fs-5"></i> Entraîneur

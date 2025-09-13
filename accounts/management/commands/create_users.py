@@ -4,8 +4,6 @@ from django.db.utils import IntegrityError
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 
-from booking.models import ClubGroup
-
 
 class Command(BaseCommand):
     """
@@ -81,10 +79,10 @@ class Command(BaseCommand):
                     )
 
     def add_group(self, filename: str):
-        young_group = Group.objects.get(name=ClubGroup.YOUNG)
-        leisure_group = Group.objects.get(name=ClubGroup.LEISURE)
-        competn1_group = Group.objects.get(name=ClubGroup.COMPET_N1)
-        competn2_group = Group.objects.get(name=ClubGroup.COMPET_N2)
+        young_group = Group.objects.get(name="Jeune")
+        leisure_group = Group.objects.get(name="Loisir")
+        competn1_group = Group.objects.get(name="Compétition N1")
+        competn2_group = Group.objects.get(name="Compétition N2")
 
         with open(filename, mode="r") as csvfile:
             reader = csv.DictReader(csvfile, delimiter=";")

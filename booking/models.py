@@ -1,10 +1,9 @@
 import datetime
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
-
-from .groups import ClubGroup, RegisterPermission
 
 
 def get_year_field() -> models.Field:
@@ -21,6 +20,29 @@ def get_week_field() -> models.Field:
     )
 
 
+class SessionGroup(models.Model):
+    """
+    Groupe de niveau de nage
+
+    En fonction du groupe auquel un nageur appartient,
+    il ne peut pas s'inscrire à plus d'un certain
+    nombre de séances par semaine
+    """
+
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, verbose_name="Groupe")
+    max_registrations_per_week = models.PositiveSmallIntegerField(
+        name="Limite d'inscriptions",
+        verbose_name="Nombre maximum d'inscriptions hebdomadaires par nageur",
+    )
+
+    def __str__(self) -> str:
+        return self.group.name
+
+    class Meta:
+        verbose_name = "groupe de nage"
+        verbose_name_plural = "groupes de nage"
+
+
 class AbstractWeeklySession(models.Model):
     WEEKDAY = {
         1: "Lundi",
@@ -32,19 +54,20 @@ class AbstractWeeklySession(models.Model):
         7: "Dimanche",
     }
 
-    GROUP = {
-        "L": ClubGroup.LEISURE,
-        "J": ClubGroup.YOUNG,
-        "C1": ClubGroup.COMPET_N1,
-        "C2": ClubGroup.COMPET_N2,
-    }
-
-    group = models.CharField("Groupe", max_length=2, choices=GROUP)
+    group = models.ForeignKey(
+        SessionGroup,
+        on_delete=models.CASCADE,
+        verbose_name="Groupe",
+    )
     weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAY)
     start_hour = models.TimeField("Heure début")
     stop_hour = models.TimeField("Heure fin")
     capacity = models.PositiveSmallIntegerField("Capacité")
     is_cancelled = models.BooleanField("Est annulée ?", default=False)
+
+    @property
+    def group_name(self) -> str:
+        return self.group.group.name
 
     @property
     def duration(self) -> datetime.timedelta:
@@ -67,7 +90,7 @@ class AbstractWeeklySession(models.Model):
         pass
 
     def __str__(self) -> str:
-        return f"[{self.GROUP[self.group]}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
+        return f"[{self.group_name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
 
     def clean(self):
         if self.start_hour >= self.stop_hour:
@@ -81,7 +104,7 @@ class AbstractWeeklySession(models.Model):
 
 class WeeklySession(AbstractWeeklySession):
     """
-    Créneaux d'entraînement hebdomadaires statiques définis en début d'année
+    Créneaux d'entraînement hebdomadaires définis en début d'année
 
     L'unicité de chaque créneau est défini par:
         + Groupe de niveau (Loisir, Compétition)
@@ -147,6 +170,13 @@ class WeeklySessionHistory(AbstractWeeklySession):
 
     year = get_year_field()
     week = get_week_field()
+    group = models.ForeignKey(
+        SessionGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Groupe",
+    )
 
     @property
     def total_swimmers(self) -> int:
@@ -187,9 +217,7 @@ class WeeklySessionHistory(AbstractWeeklySession):
 class AbstractSessionRegistration(models.Model):
     swimmer = models.ForeignKey(
         get_user_model(),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
         verbose_name="Nageur",
     )
     session = models.ForeignKey(
@@ -250,28 +278,6 @@ class SessionRegistration(AbstractSessionRegistration):
                 name="unique_swimmer_for_one_session",
             ),
         ]
-        permissions = [
-            (
-                RegisterPermission.COACH,
-                "Le nageur peut s'inscrire en tant qu'entraîneur à une session",
-            ),
-            (
-                RegisterPermission.LEISURE,
-                "Le nageur en loisir peut s'inscrire à une session de loisir",
-            ),
-            (
-                RegisterPermission.YOUNG,
-                "Le jeune nageur peut s'inscrire à une session de jeune",
-            ),
-            (
-                RegisterPermission.COMPET_N1,
-                "Le nageur en compétition peut s'inscrire à une session de compétition de niveau 1",
-            ),
-            (
-                RegisterPermission.COMPET_N2,
-                "Le nageur en compétition peut s'inscrire à une session de compétition de niveau 2",
-            ),
-        ]
 
 
 class SessionRegistrationHistory(AbstractSessionRegistration):
@@ -279,6 +285,13 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
     Historique des inscriptions pour les statistiques
     """
 
+    swimmer = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Nageur",
+    )
     session = models.ForeignKey(
         WeeklySessionHistory,
         on_delete=models.CASCADE,
