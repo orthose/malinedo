@@ -19,18 +19,21 @@
                     </span>   
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'home' %}">Accueil</a>
+                    <a class="nav-link mx-2" href="{% url 'home' %}"><i class="bi bi-house"></i> Accueil</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank">Mot&nbsp;de&nbsp;passe</a>
+                    <a class="nav-link mx-2" href="{% url 'password_change' %}" target="_blank"><i class="bi bi-shield-lock"></i> Mot&nbsp;de&nbsp;passe</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link mx-2" href="{% url 'groups' %}"><i class="bi bi-people"></i> Groupes</a>
                 </li>
                 {% if user.is_board_member %}
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank">Administrateur</a>
+                    <a class="nav-link mx-2" href="{% url 'admin:index' %}" target="_blank"><i class="bi bi-gear"></i> Admin</a>
                 </li>
                 {% endif %}
                 <li class="nav-item">
-                    <a class="nav-link mx-2" href="{% url 'notice' %}">Notice</a>
+                    <a class="nav-link mx-2" href="{% url 'help' %}"><i class="bi bi-info-circle"></i> Aide</a>
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto mb-2 d-flex flex-row">

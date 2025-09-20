@@ -1,6 +1,6 @@
 {% extends "booking/navbar.html" %}
 
-{% block title %}Notice{% endblock %}
+{% block title %}Aide{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -29,13 +29,17 @@
             <h1>Première connexion</h1>
             <p>
                 <div class="alert alert-info">Assurez-vous au préalable qu'un membre du bureau vous a enregistré dans l'application
-                et vous a ajouté à au moins un groupe parmi les suivants&nbsp;: <i>Jeune</i>, <i>Loisir</i>, <i>Compétition</i>.
-                Il existe également un groupe permettant de s'inscrire à une séance en tant qu'entraîneur.</div>
+                et vous a ajouté à au moins un groupe de nage.
+                Il existe également un groupe permettant de s'inscrire à une séance en tant qu'entraîneur.
+                Pour connaître votre groupe de nage, consultez la page
+                <a style="text-decoration: none;" href="{% url 'groups' %}"><i class="bi bi-people"></i> Groupes</a>.</div>
 
-                Lors de votre première connexion, commencez par cliquer sur <b>Mot de passe</b>
+                Lors de votre première connexion, commencez par cliquer sur
+                <a style="text-decoration: none;" href="{% url 'password_change' %}" target="_blank"><i class="bi bi-shield-lock"></i> Mot&nbsp;de&nbsp;passe</a>
                 dans la barre de navigation en haut pour modifier votre mot de passe.<br><br>
 
-                Revenez ensuite à la page d'accueil de l'application.
+                Revenez ensuite à la page d'accueil de l'application
+                en cliquant sur le logo en haut à gauche.
                 Les séances disponibles pour vos groupes s'affichent.
             </p>
             <ol>
@@ -43,11 +47,10 @@
                 <li>Cliquez sur le bouton <b><i class="bi bi-infinity"> </i>Régulier</b> pour vous inscrire.</li>
             </ol>
             <p>
-                Si vous êtes dans le groupe <i>Loisir</i> choisissez seulement un créneau régulier,
-                et au moins deux si vous êtes dans le groupe <i>Compétition</i>.<br><br>
+                Vous pouvez vous inscrire à un nombre limité de séances en fonction de votre groupe de nage.<br><br>
 
-                Voilà c'est tout&nbsp;! Avec un peu de chance vous n'aurez plus jamais
-                besoin de revenir sur <i>MaLineDo</i>.<br><br>
+                Voilà c'est tout&nbsp;! Avec un peu de chance, si vous êtes un nageur assidu,
+                vous n'aurez plus besoin de revenir sur <i>MaLineDo</i>.<br><br>
             </p>
 
             <h1>Les inscriptions</h1>

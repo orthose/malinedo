@@ -6,6 +6,7 @@ from typing import cast
 
 from accounts.models import User
 from .models import (
+    SessionGroup,
     WeeklySession,
     SessionRegistration,
     WeeklySessionHistory,
@@ -71,7 +72,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
             )
 
         # Filtre des groupes du nageur
-        filters["group__group__in"] = request.user.get_pk_groups()
+        filters["group__group__in"] = request.user.groups.all()
 
         # Requête à la base de données des séances
         sessions = (
@@ -154,7 +155,6 @@ def schedule(request: HttpRequest) -> HttpResponse:
         "weekday_sessions": weekday_sessions,
         "is_current_week": is_current_week,
         "is_coach": request.user.is_coach,
-        "groups": request.user.groups.order_by("pk").all(),
     }
 
     return render(request, "booking/schedule.html", context)
@@ -181,7 +181,7 @@ def edit(request: HttpRequest) -> HttpResponse:
                 # Si le nageur veut s'inscire en tant qu'entraîneur en a-t-il la permission ?
                 (not form.cleaned_data["swimmer_is_coach"] or request.user.is_coach)
                 # Est-ce que la nageur a la permission de s'inscrire en fonction de ses groupes ?
-                and session.group.group.pk in request.user.get_pk_groups()
+                and session.group.group in request.user.groups.all()
                 # S'il s'agit d'une inscription est-ce que le nageur a déjà un entraînement prévu à la même heure le même jour ?
                 and (
                     "is_regular" not in fields
@@ -212,5 +212,15 @@ def edit(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def notice(request: HttpRequest) -> HttpRequest:
-    return render(request, "booking/notice.html")
+def groups(request: HttpRequest) -> HttpRequest:
+    context = {
+        "groups": SessionGroup.objects.filter(group__in=request.user.groups.all()),
+        "admins": User.objects.filter(is_staff=True, is_superuser=False),
+    }
+
+    return render(request, "booking/groups.html", context)
+
+
+@login_required
+def help(request: HttpRequest) -> HttpRequest:
+    return render(request, "booking/help.html")

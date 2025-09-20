@@ -1,0 +1,48 @@
+{% extends "booking/navbar.html" %}
+
+{% block title %}Groupes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1>Quels sont mes groupes&nbsp;?</h1>
+            {% if user.is_board_member %}
+            <div class="alert alert-info">
+                Vous êtes membre du <b>Bureau</b>. Vous pouvez effectuer les actions suivantes&nbsp;:
+                <ul>
+                    <li>Accéder à l'interface d'administration du site.</li>
+                    <li>Ajouter et modifier des utilisateurs.</li>
+                    <li>Ajouter et modifier des séances hebdomadaires.</li>
+                    <li>Ajouter et modifier des inscriptions aux séances.</li>
+                </ul>
+            </div>
+            {% endif %}
+            {% if user.is_coach %}
+            <div class="alert alert-info">
+                Vous êtes <b>Entraîneur</b>.
+                Vous pouvez vous inscrire à des séances en tant qu'entraîneur.
+            </div>
+            {% endif %}
+            {% if groups %}
+            <div class="alert alert-success">
+                Vous êtes dans le(s) groupe(s) de nage {% for group in groups %}<b>{{ group }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.
+                Vous pouvez vous inscire au maximum à <b>{{ user.max_registrations_per_week }}</b> séance(s) par semaine.
+            </div>
+            {% else %}
+            <div class="alert alert-danger">
+                Vous n'êtes actuellement dans aucun groupe de nage.
+                Vous ne pouvez donc vous inscrire à aucune séance.
+                Veuillez contacter un administrateur pour être ajouté dans un groupe.<br><br>
+                Liste des administrateurs&nbsp;:
+                <ul>
+                    {% for admin in admins %}
+                    <li>{{ admin.first_name }} {{ admin.last_name|upper }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

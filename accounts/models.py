@@ -44,5 +44,24 @@ class User(AbstractUser):
     def is_coach(self) -> bool:
         return self.groups.filter(name=ClubRole.COACH).exists()
 
-    def get_pk_groups(self) -> list[int]:
-        return [group.pk for group in self.groups.all()]
+    @property
+    def max_registrations_per_week(self) -> int:
+        from booking.models import SessionGroup
+
+        return max(
+            session_group.max_registrations_per_week
+            for session_group in SessionGroup.objects.filter(
+                group__in=self.groups.all()
+            )
+        )
+
+    @property
+    def count_registrations(self) -> int:
+        from booking.models import SessionRegistration
+
+        return SessionRegistration.objects.filter(
+            swimmer=self,
+            is_cancelled=False,
+            swimmer_is_coach=False,
+            session__is_cancelled=False,
+        ).count()

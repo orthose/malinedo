@@ -31,11 +31,14 @@ class SessionGroup(models.Model):
 
     group = models.OneToOneField(Group, on_delete=models.CASCADE, verbose_name="Groupe")
     max_registrations_per_week = models.PositiveSmallIntegerField(
-        name="Limite d'inscriptions",
-        verbose_name="Nombre maximum d'inscriptions hebdomadaires par nageur",
+        verbose_name="Limite d'inscriptions hebdomadaires par nageur",
     )
 
     def __str__(self) -> str:
+        return self.group.name
+
+    @property
+    def name(self) -> str:
         return self.group.name
 
     class Meta:
@@ -66,10 +69,6 @@ class AbstractWeeklySession(models.Model):
     is_cancelled = models.BooleanField("Est annulée ?", default=False)
 
     @property
-    def group_name(self) -> str:
-        return self.group.group.name
-
-    @property
     def duration(self) -> datetime.timedelta:
         dt_start_hour = datetime.datetime.combine(
             datetime.date(1, 1, 1), self.start_hour
@@ -90,7 +89,7 @@ class AbstractWeeklySession(models.Model):
         pass
 
     def __str__(self) -> str:
-        return f"[{self.group_name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
+        return f"[{self.group.name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
 
     def clean(self):
         if self.start_hour >= self.stop_hour:

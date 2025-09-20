@@ -20,16 +20,6 @@ function toggle_collapse_button(button) {
                         <i class="bi bi-calendar-week"></i> {{ schedule_form.mysessions.label }}
                 </label>
             </div>
-            <div class="col-auto dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownGroups" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-people-fill"></i> Mes groupes
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownGroups">
-                    {% for group in groups %}
-                        <li class="dropdown-item bg-transparent">{{ group }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
             <div class="col-auto">
                 <button class="btn btn-outline-primary" id="btn-show-filters" type="button"
                     data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="false" aria-controls="filters"
@@ -58,6 +48,9 @@ function toggle_collapse_button(button) {
                 {{ schedule_form.week.label|upper }}&nbsp;<b class="fs-1">{{ schedule_form.week.value }}</b>
                 {{ schedule_form.year.label|upper }}&nbsp;<b class="fs-1">{{ schedule_form.year.value }}</b>
             </h1>
+        </div>
+        <div class="text-center {% if user.count_registrations == 0 %}alert alert-info{% elif user.count_registrations > user.max_registrations_per_week %}alert alert-danger{% else %}alert alert-success{% endif %}">
+            Vous êtes inscrit à <b>{{ user.count_registrations }}</b> sur <b>{{ user.max_registrations_per_week }}</b> séance(s).
         </div>
     </form>
 </div>
@@ -112,7 +105,7 @@ function toggle_collapse_button(button) {
                     {% endif %}
                     </div>
                 </div>
-                <div class="fs-6 text-center" style="min-height: 32px;">[{{ session.group_name }}]</div>
+                <div class="fs-6 text-center" style="min-height: 32px;">[{{ session.group.name }}]</div>
                 <div class="fs-5 text-center">{{ weekday }} {{ session.french_date }}</div>
                 <div class="fs-1 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
                 <div class="progress mb-1 mt-3 mb-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">
