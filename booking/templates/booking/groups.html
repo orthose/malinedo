@@ -24,9 +24,9 @@
                 Vous pouvez vous inscrire à des séances en tant qu'entraîneur.
             </div>
             {% endif %}
-            {% if groups %}
+            {% if session_groups %}
             <div class="alert alert-success">
-                Vous êtes dans le(s) groupe(s) de nage {% for group in groups %}<b>{{ group }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.
+                Vous êtes dans le(s) groupe(s) de nage {% for group in session_groups %}<b>{{ group }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.
                 Vous pouvez vous inscire au maximum à <b>{{ user.max_registrations_per_week }}</b> séance(s) par semaine.
             </div>
             {% else %}

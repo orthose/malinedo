@@ -57,16 +57,18 @@ class AbstractWeeklySession(models.Model):
         7: "Dimanche",
     }
 
-    group = models.ForeignKey(
-        SessionGroup,
-        on_delete=models.CASCADE,
-        verbose_name="Groupe",
-    )
+    groups = models.ManyToManyField(SessionGroup, verbose_name="Groupes")
     weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAY)
     start_hour = models.TimeField("Heure début")
     stop_hour = models.TimeField("Heure fin")
     capacity = models.PositiveSmallIntegerField("Capacité")
     is_cancelled = models.BooleanField("Est annulée ?", default=False)
+
+    @property
+    def group_names(self) -> list[str]:
+        return [
+            session_group.name for session_group in self.groups.order_by("pk").all()
+        ]
 
     @property
     def duration(self) -> datetime.timedelta:
@@ -89,7 +91,8 @@ class AbstractWeeklySession(models.Model):
         pass
 
     def __str__(self) -> str:
-        return f"[{self.group.name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
+        groups_name = "|".join([group.name for group in self.groups.order_by("pk")])
+        return f"[{groups_name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
 
     def clean(self):
         if self.start_hour >= self.stop_hour:
@@ -106,9 +109,11 @@ class WeeklySession(AbstractWeeklySession):
     Créneaux d'entraînement hebdomadaires définis en début d'année
 
     L'unicité de chaque créneau est défini par:
-        + Groupe de niveau (Loisir, Compétition)
+        + Groupes de niveau (ex: Loisir, Compétition)
         + Jour de la semaine
         + Heure de début
+
+    La contrainte d'unicité est vérifiée côté formulaire admin.
 
     Les autres champs à compléter pour chaque créneau sont:
         + Heure de fin
@@ -137,24 +142,25 @@ class WeeklySession(AbstractWeeklySession):
             self.weekday,
         ).strftime("%d/%m/%Y")
 
-    def to_history(self, year: int, week: int) -> "WeeklySessionHistory":
+    def save_to_history(self, year: int, week: int) -> "WeeklySessionHistory":
         session = self.__dict__.copy()
         session.pop("id")
         session.pop("_state")
         session["year"] = year
         session["week"] = week
-        return WeeklySessionHistory(**session)
+
+        session_history = WeeklySessionHistory(**session)
+        session_history.save()
+
+        for session_group in self.groups.all():
+            session_history.groups.add(session_group)
+
+        return session_history
 
     class Meta:
         verbose_name = "session hebdomadaire"
         verbose_name_plural = "sessions hebdomadaires"
         constraints = [
-            models.UniqueConstraint(
-                "group",
-                "weekday",
-                "start_hour",
-                name="unique_weekly_session_hour_per_group",
-            ),
             models.CheckConstraint(
                 check=models.Q(start_hour__lt=models.F("stop_hour")),
                 name="check_weekly_session_start_hour_before_stop_hour",
@@ -169,13 +175,6 @@ class WeeklySessionHistory(AbstractWeeklySession):
 
     year = get_year_field()
     week = get_week_field()
-    group = models.ForeignKey(
-        SessionGroup,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Groupe",
-    )
 
     @property
     def total_swimmers(self) -> int:
@@ -198,14 +197,6 @@ class WeeklySessionHistory(AbstractWeeklySession):
         verbose_name = "historique session hebdomadaire"
         verbose_name_plural = "historique sessions hebdomadaires"
         constraints = [
-            models.UniqueConstraint(
-                "group",
-                "weekday",
-                "start_hour",
-                "year",
-                "week",
-                name="unique_weekly_session_history_hour_per_group",
-            ),
             models.CheckConstraint(
                 check=models.Q(start_hour__lt=models.F("stop_hour")),
                 name="check_weekly_session_history_start_hour_before_stop_hour",
@@ -253,18 +244,11 @@ class SessionRegistration(AbstractSessionRegistration):
         + Le nageur est-il l'entraîneur de la séance ?
     """
 
-    def to_history(self, year: int, week: int) -> "SessionRegistrationHistory":
+    def to_history(self, session_history_pk: int) -> "SessionRegistrationHistory":
         registration = self.__dict__.copy()
         registration.pop("id")
         registration.pop("_state")
-        session = WeeklySession.objects.get(pk=registration["session_id"])
-        registration["session_id"] = WeeklySessionHistory.objects.get(
-            year=year,
-            week=week,
-            group=session.group,
-            weekday=session.weekday,
-            start_hour=session.start_hour,
-        ).pk
+        registration["session_id"] = session_history_pk
         return SessionRegistrationHistory(**registration)
 
     class Meta:

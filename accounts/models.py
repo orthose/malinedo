@@ -48,12 +48,15 @@ class User(AbstractUser):
     def max_registrations_per_week(self) -> int:
         from booking.models import SessionGroup
 
-        return max(
+        max_registrations = [
             session_group.max_registrations_per_week
             for session_group in SessionGroup.objects.filter(
                 group__in=self.groups.all()
             )
-        )
+        ]
+        max_registrations.append(0)
+
+        return max(max_registrations)
 
     @property
     def count_registrations(self) -> int:

@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 
 from booking.models import (
     WeeklySession,
-    WeeklySessionHistory,
     SessionRegistration,
     SessionRegistrationHistory,
     GlobalSetting,
@@ -32,14 +31,21 @@ class Command(BaseCommand):
         week = GlobalSetting.get_week()
 
         ### Historisation des sessions ###
-        WeeklySessionHistory.objects.bulk_create(
-            [session.to_history(year, week) for session in WeeklySession.objects.all()]
-        )
+        weekly_session_pk_to_history = {
+            session.pk: session.save_to_history(year, week)
+            for session in WeeklySession.objects.all()
+        }
+        weekly_session_pk_to_history_pk = {
+            session_pk: history_session.pk
+            for session_pk, history_session in weekly_session_pk_to_history.items()
+        }
 
         ### Historisation des inscriptions ###
         SessionRegistrationHistory.objects.bulk_create(
             [
-                registration.to_history(year, week)
+                registration.to_history(
+                    weekly_session_pk_to_history_pk[registration.session.pk]
+                )
                 # Création de l'historique des inscriptions dans l'ordre de création original
                 for registration in SessionRegistration.objects.all().order_by("pk")
             ]

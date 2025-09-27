@@ -105,7 +105,11 @@ function toggle_collapse_button(button) {
                     {% endif %}
                     </div>
                 </div>
-                <div class="fs-6 text-center" style="min-height: 32px;">[{{ session.group.name }}]</div>
+                <div class="text-center">
+                {% for group in session.group_names %}
+                    <span class="fs-6 text-center" style="min-height: 32px;">[{{ group }}]</span>
+                {% endfor %}
+                </div>
                 <div class="fs-5 text-center">{{ weekday }} {{ session.french_date }}</div>
                 <div class="fs-1 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
                 <div class="progress mb-1 mt-3 mb-3" role="progressbar" aria-label="Nombre de nageurs" aria-valuenow="{{ session.registration_rate }}" aria-valuemin="0" aria-valuemax="100">

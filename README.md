@@ -91,7 +91,7 @@ crontab -e
 ```
 
 ```
-0 1 * * sat cd ~/malinedo && .venv/bin/python manage.py close_registrations
+0 1 * * sat cd ~/malinedo && .venv/bin/python manage.py move_next_week
 @daily pg_dump -U malinedo malinedodb > ~/backup/malinedodb_$(date +\%F).sql
 ```
 
@@ -104,7 +104,6 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py create_global_settings
 python manage.py create_club_groups
-python manage.py create_sessions_2024
 python manage.py create_users users.csv
 python manage.py create_users --add-group groups.csv
 python manage.py collectstatic

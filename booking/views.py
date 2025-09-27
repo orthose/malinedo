@@ -72,12 +72,13 @@ def schedule(request: HttpRequest) -> HttpResponse:
             )
 
         # Filtre des groupes du nageur
-        filters["group__group__in"] = request.user.groups.all()
+        filters["groups__group__in"] = request.user.groups.all()
 
         # Requête à la base de données des séances
         sessions = (
             weekly_session_model.objects.filter(**filters)
-            .order_by("weekday", "start_hour", "group")
+            .distinct()
+            .order_by("weekday", "start_hour")
             # Prefetch se charge de joindre par clé étrangère session
             # donc pas besoin de préciser les filtres year et week
             .prefetch_related(
@@ -181,7 +182,9 @@ def edit(request: HttpRequest) -> HttpResponse:
                 # Si le nageur veut s'inscire en tant qu'entraîneur en a-t-il la permission ?
                 (not form.cleaned_data["swimmer_is_coach"] or request.user.is_coach)
                 # Est-ce que la nageur a la permission de s'inscrire en fonction de ses groupes ?
-                and session.group.group in request.user.groups.all()
+                and set(
+                    session_group.group for session_group in session.groups.all()
+                ).intersection(set(request.user.groups.all()))
                 # S'il s'agit d'une inscription est-ce que le nageur a déjà un entraînement prévu à la même heure le même jour ?
                 and (
                     "is_regular" not in fields
@@ -214,7 +217,9 @@ def edit(request: HttpRequest) -> HttpResponse:
 @login_required
 def groups(request: HttpRequest) -> HttpRequest:
     context = {
-        "groups": SessionGroup.objects.filter(group__in=request.user.groups.all()),
+        "session_groups": SessionGroup.objects.filter(
+            group__in=request.user.groups.all()
+        ),
         "admins": User.objects.filter(is_staff=True, is_superuser=False),
     }
 
