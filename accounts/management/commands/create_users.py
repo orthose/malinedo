@@ -1,8 +1,15 @@
 import csv
+import string
+import secrets
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+
+
+def generate_random_password(length: int):
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 class Command(BaseCommand):
@@ -21,9 +28,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("filename", type=str)
-        parser.add_argument("--add-group", action="store_true", default=False)
+        parser.add_argument(
+            "--add-group",
+            action="append",
+            type=str,
+            help="Association abréviation de groupe avec nom complet (ex: L=Loisir)",
+        )
 
-    def create_users(self, filename: str):
+    def create_users(self, filename: str, mapping_groups: dict[str, str]):
         with open(filename, mode="r") as csvfile:
             reader = csv.DictReader(csvfile, delimiter=";")
 
@@ -44,25 +56,25 @@ class Command(BaseCommand):
                     )
                     continue
 
-                user_exists = (
+                user = (
                     get_user_model()
                     .objects.filter(
                         username=row["Mail"],
                         first_name=row["Prénom"],
                         last_name=row["Nom"],
                     )
-                    .exists()
+                    .first()
                 )
 
                 # On ne veut pas écraser les informations d'un utilisateur existant
-                if not user_exists:
+                if not user:
                     try:
                         user = get_user_model().objects.create(
                             username=row["Mail"],
                             first_name=row["Prénom"],
                             last_name=row["Nom"],
                         )
-                        user.set_password(row["Prénom"].lower())
+                        user.set_password(generate_random_password(32))
                         user.save()
 
                     except IntegrityError as error:
@@ -78,65 +90,25 @@ class Command(BaseCommand):
                         self.style.SUCCESS(f"{row['Prénom']} {row['Nom']} a été ajouté")
                     )
 
-    def add_group(self, filename: str):
-        young_group = Group.objects.get(name="Jeune")
-        leisure_group = Group.objects.get(name="Loisir")
-        competn1_group = Group.objects.get(name="Compétition N1")
-        competn2_group = Group.objects.get(name="Compétition N2")
-
-        with open(filename, mode="r") as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=";")
-
-            for row in reader:
-                if row["Prénom"] == "" or row["Nom"] == "":
-                    continue
-
-                # Nettoyage des données
-                row["Prénom"] = row["Prénom"].strip()
-                row["Nom"] = row["Nom"].strip()
-                row["Groupe"] = row["Groupe"].strip().upper()
-
-                try:
-                    user = get_user_model().objects.get(
-                        first_name=row["Prénom"],
-                        last_name=row["Nom"],
-                    )
-                except get_user_model().DoesNotExist:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"{row['Prénom']} {row['Nom']} n'est pas enregistré"
-                        )
-                    )
-                    continue
-
-                match row["Groupe"]:
-                    case "L":
-                        user.groups.add(leisure_group)
+                # Ajout des groupes
+                if mapping_groups:
+                    for short_name in row["Groupe"].split(","):
+                        full_name = mapping_groups[short_name]
+                        group = Group.objects.get(name=full_name)
+                        user.groups.add(group)
                         self.stdout.write(
                             self.style.SUCCESS(
-                                f"{row['Prénom']} {row['Nom']} a été ajouté aux groupe de loisir"
-                            )
-                        )
-                    case "C":
-                        user.groups.add(
-                            young_group,
-                            competn1_group,
-                            competn2_group,
-                        )
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f"{row['Prénom']} {row['Nom']} a été ajouté aux groupes de compétition"
-                            )
-                        )
-                    case _:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"Le groupe de {row['Prénom']} {row['Nom']} n'est pas renseigné"
+                                f"{row['Prénom']} {row['Nom']} a été ajouté au groupe {full_name}"
                             )
                         )
 
     def handle(self, *args, **options):
-        if not options["add_group"]:
-            self.create_users(options["filename"])
-        else:
-            self.add_group(options["filename"])
+        mapping_groups: dict[str, str] = dict()
+        added_groups: list[str] | None = options["add_group"]
+        if added_groups:
+            for map_group in added_groups:
+                short_name, full_name = map_group.split("=")
+                assert Group.objects.filter(name=full_name).exists()
+                mapping_groups[short_name] = full_name
+
+        self.create_users(options["filename"], mapping_groups)
