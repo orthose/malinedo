@@ -136,7 +136,11 @@ WantedBy=multi-user.target
 ```
 
 ```bash
+# Lancer au démarrage du système
+sudo systemctl enable malinedo
+# Lancer l'application
 sudo systemctl start malinedo
+# Vérifier l'état de l'application
 sudo systemctl status malinedo
 ```
 
