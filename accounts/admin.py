@@ -6,6 +6,8 @@ from .models import User
 
 class CustomUserAdmin(UserAdmin):
     list_display = ("username", "first_name", "last_name", "is_staff")
+    fieldsets = UserAdmin.fieldsets
+    fieldsets[1][1]["fields"] += ("enable_notifications",)
 
 
 def clean(self):

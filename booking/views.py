@@ -136,7 +136,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
             session.is_cancelled or session.swimmer_registration,
         )
 
-        weekday_sessions[WeeklySession.WEEKDAY[session.weekday]].append(session)
+        weekday_sessions[session.french_weekday].append(session)
 
     # Attributs HTML pour les champs de formulaire du template
     schedule_form.fields["mysessions"].widget.attrs.update(

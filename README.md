@@ -63,6 +63,7 @@ DEBUG=False
 # python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
 SECRET_KEY=""
 ALLOWED_HOSTS=127.0.0.1,localhost,domaine.com
+SITE_URL="http://127.0.0.1:8000"
 
 ADMIN_URL=admin/ 
 STATIC_ROOT=/var/www/html/malinedo/static/
@@ -92,6 +93,7 @@ crontab -e
 
 ```
 0 1 * * sat cd ~/malinedo && .venv/bin/python manage.py move_next_week
+0 1 * * mon cd ~/malinedo && .venv/bin/python manage.py send_mail_reminder
 @daily pg_dump -U malinedo malinedodb > ~/backup/malinedodb_$(date +\%F).sql
 ```
 
@@ -104,8 +106,7 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py create_global_settings
 python manage.py create_club_groups
-python manage.py create_users users.csv
-python manage.py create_users --add-group groups.csv
+python manage.py create_users users.csv --add-group="L=Loisir"
 python manage.py collectstatic
 ```
 

@@ -1,0 +1,23 @@
+{% extends "booking/navbar.html" %}
+
+{% block title %}Paramètres{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1 class="mt-4 mb-4">Mes Paramètres</h1>
+            <a class="btn btn-outline-primary" href="{% url 'password_change' %}" target="_blank">
+                <i class="bi bi-shield-lock"></i> Mot&nbsp;de&nbsp;passe</a>
+            </a>
+            <form action="{% url 'user_settings' %}" method="post" class="mt-3">
+                {% csrf_token %}
+                {{ form.enable_notifications }}
+                <label class="btn btn-outline-primary" for="{{ form.enable_notifications.auto_id }}" type="button">
+                    <i class="bi bi-bell"></i> {{ form.enable_notifications.label }}
+                </label>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

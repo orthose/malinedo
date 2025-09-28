@@ -87,6 +87,10 @@ class AbstractWeeklySession(models.Model):
         return round(self.total_swimmers * 100 / self.capacity)
 
     @property
+    def french_weekday(self) -> str:
+        return self.WEEKDAY[self.weekday]
+
+    @property
     def french_date(self) -> str:
         pass
 

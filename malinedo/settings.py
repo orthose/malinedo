@@ -27,6 +27,8 @@ DEBUG = os.environ["DEBUG"].lower() == "true"
 
 ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 
+SITE_URL = os.environ["SITE_URL"]
+
 
 # Application definition
 
@@ -140,6 +142,18 @@ ADMIN_URL = "admin/"
 LOGIN_REDIRECT_URL = "/home"
 LOGOUT_REDIRECT_URL = "/home"
 
+# Mail
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ["EMAIL_HOST"]
+EMAIL_PORT = os.environ["EMAIL_PORT"]
+EMAIL_USE_TLS = os.environ["EMAIL_USE_TLS"].lower() == "true"
+EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
+EMAIL_USE_SSL = os.environ["EMAIL_USE_SSL"].lower() == "true"
+# Adresse affichée dans l'entête du mail
+DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
+
 # PROD
 if not DEBUG:
     STATIC_ROOT = os.environ["STATIC_ROOT"]
@@ -156,13 +170,3 @@ if not DEBUG:
             "PORT": os.environ["DATABASE_PORT"],
         }
     }
-
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ["EMAIL_HOST"]
-    EMAIL_PORT = os.environ["EMAIL_PORT"]
-    EMAIL_USE_TLS = os.environ["EMAIL_USE_TLS"].lower() == "true"
-    EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
-    EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
-    EMAIL_USE_SSL = os.environ["EMAIL_USE_SSL"].lower() == "true"
-    # Adresse affichée dans l'entête du mail
-    DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]

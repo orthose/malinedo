@@ -30,6 +30,9 @@ class User(AbstractUser):
     email = models.EmailField("Adresse e-mail", unique=True, blank=True)
     first_name = models.CharField("Prénom", max_length=150, blank=False)
     last_name = models.CharField("Nom", max_length=150, blank=False)
+    enable_notifications = models.BooleanField(
+        "Activer les notifications", default=True
+    )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

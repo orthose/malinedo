@@ -1,0 +1,17 @@
+# SEMAINE {{ week }} ANNÉE {{ year }}
+
+{% if coach_registrations %}Vous êtes inscrit à {{ coach_registrations.count }} séance(s) en tant qu'entraîneur.
+
+{% for registration in coach_registrations %}* Le {{ registration.session.french_weekday }} {{ registration.session.french_date }} de {{ registration.session.start_hour }} à {{ registration.session.stop_hour }}
+{% endfor %}{% endif %}
+{% if swimmer_registrations %}Vous êtes inscrit à {{ user.count_registrations }} sur {{ user.max_registrations_per_week }} séance(s) en tant que nageur.
+
+{% for registration in swimmer_registrations %}* Le {{ registration.session.french_weekday }} {{ registration.session.french_date }} de {{ registration.session.start_hour }} à {{ registration.session.stop_hour }}
+{% endfor %}{% endif %}
+Si vous ne pouvez pas venir à un entraînement, pensez à l'annuler sur MaLineDo : {{ home_url }}.
+
+Bonne nage !
+
+U.S.Palaiseau Nage avec Palmes
+
+Paramétrer les notifications : {{ settings_url }}.

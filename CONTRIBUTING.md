@@ -14,6 +14,7 @@ Créer un fichier `.env` à la racine du projet.
 DEBUG=True
 SECRET_KEY="django-insecure-z&aa%=c&ho$wsb*t7-zaiwt@_180^lp#52j*qcy^lif#mab74f"
 ALLOWED_HOSTS=127.0.0.1,localhost
+SITE_URL="http://127.0.0.1:8000"
 ```
 
 # Initialisation de la base de données
@@ -25,8 +26,6 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py create_global_settings
 python manage.py create_club_groups
-python manage.py create_users users.csv
-python manage.py create_users --add-group groups.csv
 ```
 
 # Modification des modèles
