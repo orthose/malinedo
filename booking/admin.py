@@ -5,6 +5,7 @@ from django.db.models.query import QuerySet
 
 from .models import (
     SessionGroup,
+    AbstractWeeklySession,
     WeeklySession,
     WeeklySessionHistory,
     SessionRegistration,
@@ -28,9 +29,14 @@ class WeeklySessionAdminForm(ModelForm):
         On ne peut pas effectuer cette vérification en base
         à cause de la relation m2m de WeeklySession.groups.
         """
-        concurrent_sessions = WeeklySession.objects.filter(
+        self.instance: AbstractWeeklySession
+        concurrent_sessions = self.instance.__class__.objects.filter(
             **{field: self.cleaned_data[field] for field in self.UNIQUE_FIELDS}
         )
+
+        # Modification d'une séance existante
+        if self.instance.pk:
+            concurrent_sessions = concurrent_sessions.exclude(pk=self.instance.pk)
 
         groups_set = set(self.cleaned_data["groups"])
 
