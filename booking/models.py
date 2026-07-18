@@ -231,6 +231,57 @@ class AbstractSessionRegistration(models.Model):
     class Meta:
         abstract = True
 
+    @staticmethod
+    def get_registration_model_for_week(
+        year: int, week: int
+    ) -> "AbstractSessionRegistration":
+        """
+        Récupère le modèle d'inscription pour une semaine donnée.
+
+        :param year: Année de consultation
+        :param week: Semaine de consultation
+        :return: SessionRegistration ou SessionRegistrationHistory
+        """
+        current_year = GlobalSetting.get_year()
+        current_week = GlobalSetting.get_week()
+        if year < current_year or (year == current_year and week < current_week):
+            return SessionRegistrationHistory
+        return SessionRegistration
+
+    @classmethod
+    def get_registrations_for_week(cls, year: int, week: int) -> models.QuerySet:
+        """
+        Récupère les inscriptions pour une semaine donnée.
+        Le modèle d'inscription est choisi en fonction de la semaine demandée.
+        Dans le cas d'une semaine future, le champ is_cancelled
+        est corrigé en fonction des annulations futures.
+
+        :param year: Année de consultation
+        :param week: Semaine de consultation
+        :return: QuerySet d'inscriptions corrigé
+        """
+        registration_model = cls.get_registration_model_for_week(year, week)
+        queryset = registration_model.objects.all()
+
+        if registration_model == SessionRegistrationHistory:
+            return queryset
+
+        # TODO: Ne faire le traitement que si on consulte une semaine future
+        future_cancelled_registration_ids = set(
+            FutureCancelledRegularRegistration.objects.filter(
+                registration__in=queryset,
+                year=year,
+                week=week,
+            ).values_list("registration_id", flat=True)
+        )
+
+        for registration in queryset:
+            registration.is_cancelled = (
+                registration.pk in future_cancelled_registration_ids
+            )
+
+        return queryset
+
 
 class SessionRegistration(AbstractSessionRegistration):
     """
@@ -282,6 +333,7 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
     session = models.ForeignKey(
         WeeklySessionHistory,
         on_delete=models.CASCADE,
+        verbose_name="Session historique",
     )
 
     class Meta:
@@ -295,6 +347,40 @@ class SessionRegistrationHistory(AbstractSessionRegistration):
             ),
         ]
         permissions = []
+
+
+class FutureCancelledRegularRegistration(models.Model):
+    """
+    Annulation d'une inscription régulière dans les semaines à venir
+    """
+
+    registration = models.ForeignKey(
+        SessionRegistration,
+        # Si l'inscription est supprimée alors l'annulation future doit l'être également
+        on_delete=models.CASCADE,
+        verbose_name="Inscription régulière",
+    )
+    year = get_year_field()
+    week = get_week_field()
+
+    def clean(self):
+        # Cette contrainte ne peut pas être vérifiée en base car elle nécessite une jointure
+        if not self.registration.is_regular:
+            raise ValidationError(
+                "Une annulation future ne peut être réalisée que pour une inscription régulière"
+            )
+
+    class Meta:
+        verbose_name = "annulation inscription régulière future"
+        verbose_name_plural = "annulations inscriptions régulières futures"
+        constraints = [
+            models.UniqueConstraint(
+                "registration",
+                "year",
+                "week",
+                name="unique_future_cancelled_regular_registration_for_one_week",
+            ),
+        ]
 
 
 class GlobalSetting(models.Model):

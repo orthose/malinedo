@@ -11,6 +11,7 @@ from .models import (
     SessionRegistration,
     WeeklySessionHistory,
     SessionRegistrationHistory,
+    FutureCancelledRegularRegistration,
     GlobalSetting,
 )
 from .forms import (
@@ -23,6 +24,7 @@ from .forms import (
 def schedule(request: HttpRequest) -> HttpResponse:
     request.user = cast(User, request.user)
 
+    # Quelle est la semaine courante ?
     year = GlobalSetting.get_year()
     week = GlobalSetting.get_week()
 
@@ -41,6 +43,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
 
     sessions = None
     is_current_week = True
+
     # Vérification du formulaire
     if schedule_form.is_valid():
         filters = {}
@@ -57,6 +60,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
         ):
             weekly_session_model = WeeklySession
             session_registration_model = SessionRegistration
+
         # Historique
         else:
             is_current_week = False
@@ -123,6 +127,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
 
     # Formulaire invalide
     else:
+        # TODO: Renvoyer une erreur
         sessions = WeeklySession.objects.none()
 
     # Séances par jour de la semaine
