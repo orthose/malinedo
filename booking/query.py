@@ -41,29 +41,24 @@ class WeekScheduleQuery:
         """
         Construit le QuerySet de WeeklySessionPrefetchedRegistrations pour une semaine donnée.
         """
-        # Une semaine classique est une semaine qui ne nécessite pas de filtres particuliers et de corrections en mémoire
-        # C'est le cas si on requête le planning de la semaine courante ou d'une semaine passée
-        # ou le planning d'une semaine future et qu'on filtre sur les séances futures
-        # Si is_classic_week==False on requête le planning d'une semaine future et on filtre sur les séances de la semaine courante
-        # Dans ce cas on reporte dans le futur les séances et inscriptions de la semaine courante
-        is_classic_week = not self.is_future_week or (
-            self.year == year and self.week == week
-        )
-
         user_registration_filters = (
-            # Pour les semaines classiques pas de filtre
-            {}
-            if is_classic_week
-            # Seules les inscriptions régulières de l'utilisateur sont reportées dans le futur
-            else {"is_regular": True}
+            # Seules les inscriptions régulières de l'utilisateur de la semaine courante sont reportées dans le futur
+            {"is_regular": True}
+            if self.is_future_week and GlobalState.is_current_week(year, week)
+            # Pas de filtre dans tous les autres cas
+            else {}
         )
 
         swimmers_registration_filters = (
+            # Seules les inscriptions régulières des nageurs de la semaine courante sont reportées dans le futur
+            {"is_regular": True}
+            if self.is_future_week and GlobalState.is_current_week(year, week)
+            # Si on requête les séances futures alors on filtrera dans get_schedule
+            # après l'import des inscriptions de la semaine courante dans la semaine future
+            else {}
+            if self.is_future_week and GlobalState.is_future_week(year, week)
             # Pour les semaines classiques on ne garde pas les inscriptions annulées
-            {"is_cancelled": False}
-            if is_classic_week
-            # Seules les inscriptions régulières des nageurs sont reportées dans le futur
-            else {"is_regular": True}
+            else {"is_cancelled": False}
         )
 
         return (
@@ -114,6 +109,52 @@ class WeekScheduleQuery:
             # TODO: Ajouter plus tard swimmers_cancelled_registration
         )
 
+    def __session_key(self, session: WeeklySession) -> tuple:
+        """
+        Une séance de la semaine courante est considérée comme associée
+        à une séance future lorsque leurs champs d'unicité sans la dimension temporelle
+        (session.group, session.weekday, session.start_hour) correspondent.
+        """
+        return (session.group, session.weekday, session.start_hour)
+
+    def __reset_registrations(
+        self,
+        registrations: list[SessionRegistration],
+    ) -> None:
+        """
+        Réinitialise les inscriptions de la séance de la semaine courante.
+        """
+        for reg in registrations:
+            # Dans le futur les inscriptions ne sont pas annulées
+            reg.is_cancelled = False
+
+    def __import_registrations(
+        self,
+        current_registrations: list[SessionRegistration],
+        future_registrations: list[SessionRegistration],
+    ) -> None:
+        """
+        Importe les inscriptions régulières de la séance de la semaine courante
+        dans les inscriptions de la séance future.
+        """
+        future_registered_swimmers = set(reg.swimmer for reg in future_registrations)
+        future_registrations.extend(
+            [
+                reg
+                for reg in current_registrations
+                if reg.swimmer not in future_registered_swimmers
+            ]
+        )
+
+    def __delete_cancelled_registrations(
+        self,
+        registrations: list[SessionRegistration],
+    ) -> None:
+        """
+        Supprime toutes les inscriptions annulées.
+        """
+        registrations[:] = [reg for reg in registrations if not reg.is_cancelled]
+
     def get_schedule(self) -> WeekSchedule:
         """
         Renvoie le planning pour une semaine donnée.
@@ -123,44 +164,6 @@ class WeekScheduleQuery:
         )
 
         if self.is_future_week:
-
-            def session_key(session: WeeklySession) -> tuple:
-                """
-                Une séance de la semaine courante est considérée comme associée
-                à une séance future lorsque leurs champs d'unicité sans la dimension temporelle
-                (session.group, session.weekday, session.start_hour) correspondent.
-                """
-                return (session.group, session.weekday, session.start_hour)
-
-            def reset_registrations(
-                current_registrations: list[SessionRegistration],
-            ) -> None:
-                """
-                Réinitialise les inscriptions de la séance de la semaine courante.
-                """
-                for registration in current_registrations:
-                    # Dans le futur les inscriptions ne sont pas annulées
-                    registration.is_cancelled = False
-
-            def import_registrations(
-                current_registrations: list[SessionRegistration],
-                future_registrations: list[SessionRegistration],
-            ) -> None:
-                """
-                Importe les inscriptions régulières de la séance
-                de la semaine courante dans les inscriptions de la séance future
-                """
-                future_registered_swimmers = set(
-                    registration.swimmer for registration in future_registrations
-                )
-                future_registrations.extend(
-                    [
-                        registration
-                        for registration in current_registrations
-                        if registration.swimmer not in future_registered_swimmers
-                    ]
-                )
-
             current_year = GlobalState.get_year()
             current_week = GlobalState.get_week()
             schedule_current_week = list(
@@ -171,48 +174,56 @@ class WeekScheduleQuery:
             )
 
             future_sessions = {
-                session_key(session): session for session in schedule_requested_week
+                self.__session_key(session): session
+                for session in schedule_requested_week
             }
 
             schedule_future_week = list()
 
             for session in schedule_current_week:
-                future_session = future_sessions.get(session_key(session))
+                future_session = future_sessions.get(self.__session_key(session))
+
                 # On corrige les séances et inscriptions de la semaine courante qui n'ont pas d'inscription future associée
                 if future_session is None:
                     session.year = self.year
                     session.week = self.week
                     session.is_cancelled = False
 
-                    reset_registrations(session.user_registration)
-                    reset_registrations(session.coach_registrations)
-                    reset_registrations(session.swimmer_registrations)
+                    self.__reset_registrations(session.user_registration)
+                    self.__reset_registrations(session.coach_registrations)
+                    self.__reset_registrations(session.swimmer_registrations)
 
+                    # On ajoute la séance au planning
                     schedule_future_week.append(session)
 
                 # Une séance future est associée à la séance de la semaine courante
+                # On modifie en place la séance future et ses inscriptions
                 else:
-                    # TODO: refactoriser ?
-                    reset_registrations(session.user_registration)
-                    reset_registrations(session.coach_registrations)
-                    reset_registrations(session.swimmer_registrations)
+                    self.__reset_registrations(session.user_registration)
+                    self.__reset_registrations(session.coach_registrations)
+                    self.__reset_registrations(session.swimmer_registrations)
 
-                    import_registrations(
+                    self.__import_registrations(
                         session.user_registration,
                         future_session.user_registration,
                     )
-                    import_registrations(
+                    self.__import_registrations(
                         session.coach_registrations,
                         future_session.coach_registrations,
                     )
-                    import_registrations(
+                    self.__import_registrations(
                         session.swimmer_registrations,
                         future_session.swimmer_registrations,
                     )
 
-            # TODO: Il ne faut rajouter que les séances futures qui n'ont pas de séance courante associée
-            # On ajoute toutes les séances futures qui écrasent les séances de la semaine courante
-            # ou qui n'ont pas de séances de la semaine courante associée
+                    self.__delete_cancelled_registrations(
+                        future_session.coach_registrations
+                    )
+                    self.__delete_cancelled_registrations(
+                        future_session.swimmer_registrations
+                    )
+
+            # On ajoute au planning toutes les séances futures
             schedule_future_week.extend(schedule_requested_week)
 
             return schedule_future_week
