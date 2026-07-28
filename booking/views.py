@@ -1,5 +1,4 @@
-from django.db import models
-from django.http import HttpRequest, HttpResponse, Http404
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from typing import cast
@@ -9,15 +8,13 @@ from .models import (
     SessionGroup,
     WeeklySession,
     SessionRegistration,
-    WeeklySessionHistory,
-    SessionRegistrationHistory,
-    FutureCancelledRegularRegistration,
-    GlobalSetting,
+    GlobalState,
 )
 from .forms import (
     ScheduleForm,
     EditSessionRegistrationForm,
 )
+from .query import WeekScheduleQuery
 
 
 @login_required
@@ -25,8 +22,8 @@ def schedule(request: HttpRequest) -> HttpResponse:
     request.user = cast(User, request.user)
 
     # Quelle est la semaine courante ?
-    year = GlobalSetting.get_year()
-    week = GlobalSetting.get_week()
+    year = GlobalState.get_year()
+    week = GlobalState.get_week()
 
     # Formulaire de filtrage
     schedule_form = (
@@ -41,106 +38,42 @@ def schedule(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    sessions = None
-    is_current_week = True
+    week_schedule = None
 
     # Vérification du formulaire
     if schedule_form.is_valid():
-        filters = {}
-        weekly_session_model = WeeklySession
-        session_registration_model = SessionRegistration
+        session_filters = {}
 
         # Enregistrement dans la session utilisateur du filtre des séances
         request.session["mysessions"] = schedule_form.cleaned_data["mysessions"]
 
-        # Semaine courante
-        if (
-            schedule_form.cleaned_data["year"] == year
-            and schedule_form.cleaned_data["week"] == week
-        ):
-            weekly_session_model = WeeklySession
-            session_registration_model = SessionRegistration
-
-        # Historique
-        else:
-            is_current_week = False
-            weekly_session_model = WeeklySessionHistory
-            session_registration_model = SessionRegistrationHistory
-            filters["year"] = schedule_form.cleaned_data["year"]
-            filters["week"] = schedule_form.cleaned_data["week"]
+        year = schedule_form.cleaned_data["year"]
+        week = schedule_form.cleaned_data["week"]
 
         # Filtre des séances du nageur
         if schedule_form.cleaned_data["mysessions"]:
-            filters[f"{session_registration_model.__name__.lower()}__swimmer"] = (
-                request.user
-            )
+            session_filters["sessionregistration__swimmer"] = request.user
 
         # Filtre des groupes du nageur
-        filters["groups__group__in"] = request.user.groups.all()
+        # TODO: Gérer group = NULL
+        session_filters["group__groups__in"] = request.user.groups.all()
 
-        # Requête à la base de données des séances
-        sessions = (
-            weekly_session_model.objects.filter(**filters)
-            .distinct()
-            .order_by("weekday", "start_hour")
-            # Prefetch se charge de joindre par clé étrangère session
-            # donc pas besoin de préciser les filtres year et week
-            .prefetch_related(
-                # Crée le champ swimmer_registration
-                # Si le nageur n'est pas inscrit à la session la liste est vide
-                # Sinon la liste contient un seul enregistrement (contrainte unicité)
-                models.Prefetch(
-                    f"{session_registration_model.__name__.lower()}_set",
-                    queryset=session_registration_model.objects.filter(
-                        swimmer=request.user
-                    ).only("is_regular", "is_cancelled", "swimmer_is_coach"),
-                    to_attr="swimmer_registration",
-                )
-            )
-            .prefetch_related(
-                # Liste des entraîneurs triés par création
-                models.Prefetch(
-                    f"{session_registration_model.__name__.lower()}_set",
-                    queryset=session_registration_model.objects.filter(
-                        is_cancelled=False,
-                        swimmer_is_coach=True,
-                    )
-                    .only("swimmer", "is_regular")
-                    .order_by("pk"),
-                    to_attr="coaches_registration",
-                )
-            )
-            .prefetch_related(
-                # Liste des nageurs triés par création
-                models.Prefetch(
-                    f"{session_registration_model.__name__.lower()}_set",
-                    queryset=session_registration_model.objects.filter(
-                        is_cancelled=False,
-                        swimmer_is_coach=False,
-                    )
-                    .only("swimmer", "is_regular")
-                    .order_by("pk"),
-                    to_attr="swimmers_registration",
-                )
-            )
-        )
+        # Requête du planning des séances et inscriptions pour la semaine
+        week_schedule = WeekScheduleQuery(
+            year, week, request.user, **session_filters
+        ).get_schedule()
 
     # Formulaire invalide
     else:
-        # TODO: Renvoyer une erreur
-        sessions = WeeklySession.objects.none()
+        return HttpResponseBadRequest("Formulaire de planning invalide")
 
     # Séances par jour de la semaine
     weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
 
-    for session in sessions:
-        # Attributs dynamiques de session pour le template
-        setattr(
-            session,
-            "background_is_colored",
-            session.is_cancelled or session.swimmer_registration,
+    for session in week_schedule:
+        session.background_is_colored = (
+            session.is_cancelled or session.user_registration
         )
-
         weekday_sessions[session.french_weekday].append(session)
 
     # Attributs HTML pour les champs de formulaire du template
@@ -159,7 +92,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
     context = {
         "schedule_form": schedule_form,
         "weekday_sessions": weekday_sessions,
-        "is_current_week": is_current_week,
+        "is_current_week": GlobalState.is_current_week(year, week),
         "is_coach": request.user.is_coach,
     }
 
@@ -174,7 +107,7 @@ def edit(request: HttpRequest) -> HttpResponse:
         form = EditSessionRegistrationForm(request.POST)
 
         if form.is_valid():
-            session = get_object_or_404(
+            session = get_object_or_404(  # TODO: 404 est le bon code ?
                 WeeklySession, pk=form.cleaned_data["session_id"]
             )
 
@@ -183,10 +116,11 @@ def edit(request: HttpRequest) -> HttpResponse:
                 if field in request.POST:
                     fields[field] = form.cleaned_data[field]
 
+            # TODO: Ces vérifications sont faites dans SessionRegistration.clean
             if (
-                # Si le nageur veut s'inscire en tant qu'entraîneur en a-t-il la permission ?
+                # Si le nageur veut s'inscrire en tant qu'entraîneur en a-t-il la permission ?
                 (not form.cleaned_data["swimmer_is_coach"] or request.user.is_coach)
-                # Est-ce que la nageur a la permission de s'inscrire en fonction de ses groupes ?
+                # Est-ce que le nageur a la permission de s'inscrire en fonction de ses groupes ?
                 and set(
                     session_group.group for session_group in session.groups.all()
                 ).intersection(set(request.user.groups.all()))
@@ -216,11 +150,12 @@ def edit(request: HttpRequest) -> HttpResponse:
 
             return redirect(request.GET["next"])
 
-    raise Http404
+    raise Http404  # TODO: 404 est le bon code ?
 
 
 @login_required
 def groups(request: HttpRequest) -> HttpRequest:
+    # TODO: La gestion des groupes a évolué
     context = {
         "session_groups": SessionGroup.objects.filter(
             group__in=request.user.groups.all()

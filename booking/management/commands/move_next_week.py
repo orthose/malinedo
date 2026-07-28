@@ -5,8 +5,7 @@ from django.core.management.base import BaseCommand
 from booking.models import (
     WeeklySession,
     SessionRegistration,
-    SessionRegistrationHistory,
-    GlobalSetting,
+    GlobalState,
 )
 
 
@@ -27,8 +26,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        year = GlobalSetting.get_year()
-        week = GlobalSetting.get_week()
+        year = GlobalState.get_year()
+        week = GlobalState.get_week()
 
         ### Historisation des sessions ###
         weekly_session_pk_to_history = {
@@ -64,5 +63,5 @@ class Command(BaseCommand):
         monday = datetime.datetime.fromisocalendar(year, week, 1)
         dt_next_monday = monday + datetime.timedelta(days=7)
         next_monday = dt_next_monday.isocalendar()
-        GlobalSetting.set_year(next_monday.year)
-        GlobalSetting.set_week(next_monday.week)
+        GlobalState.set_year(next_monday.year)
+        GlobalState.set_week(next_monday.week)

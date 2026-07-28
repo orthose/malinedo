@@ -5,7 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from accounts.models import User
-from booking.models import SessionRegistration, GlobalSetting
+from booking.models import SessionRegistration, GlobalState
 
 
 class Command(BaseCommand):
@@ -15,8 +15,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         context = {
-            "week": GlobalSetting.get_week(),
-            "year": GlobalSetting.get_year(),
+            "week": GlobalState.get_week(),
+            "year": GlobalState.get_year(),
             "home_url": f"{settings.SITE_URL}{reverse('home')}",
             "settings_url": f"{settings.SITE_URL}{reverse('user_settings')}",
         }

@@ -208,11 +208,9 @@ sudo systemctl restart nginx
 ## Première connexion
 
 Accédez au site via l'URL https://domaine.com/.
-Entrez votre adresse email. Le mot de passe par défaut 
-est le prénom en minuscule de l'adhérent.
-
-Lors de votre première connexion modifiez votre mot de passe
-en cliquant sur **Profil**.
+Le mot de passe est généré aléatoirement.
+Vous devez cliquer sur **Mot de passe oublié**
+pour pouvoir le réinitialiser.
 
 ## Création des groupes
 

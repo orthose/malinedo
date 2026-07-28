@@ -64,8 +64,8 @@ function toggle_collapse_button(button) {
                 <div class="rounded-3 mt-3 px-2 py-1 border border-2
                 {% if session.is_cancelled %}
                 bg-danger border-danger text-light
-                {% elif session.swimmer_registration %}
-                    {% if session.swimmer_registration.0.is_cancelled %}
+                {% elif session.user_registration %}
+                    {% if session.user_registration.0.is_cancelled %}
                     bg-danger border-danger text-light
                     {% else %}
                     bg-success border-success text-light 
@@ -89,7 +89,7 @@ function toggle_collapse_button(button) {
                     {% endif %}
                     </div>
                     <div>
-                    {% if session.swimmer_registration.0.is_regular %}
+                    {% if session.user_registration.0.is_regular %}
                         <span data-bs-toggle="tooltip" data-bs-placement="top" title="Inscription régulière">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-infinity me-1" viewBox="0 0 16 16">
                                 <path d="M5.68 5.792 7.345 7.75 5.681 9.708a2.75 2.75 0 1 1 0-3.916ZM8 6.978 6.416 5.113l-.014-.015a3.75 3.75 0 1 0 0 5.304l.014-.015L8 8.522l1.584 1.865.014.015a3.75 3.75 0 1 0 0-5.304l-.014.015zm.656.772 1.663-1.958a2.75 2.75 0 1 1 0 3.916z"/>
@@ -106,9 +106,7 @@ function toggle_collapse_button(button) {
                     </div>
                 </div>
                 <div class="text-center">
-                {% for group in session.group_names %}
-                    <span class="fs-6 text-center" style="min-height: 32px;">[{{ group }}]</span>
-                {% endfor %}
+                    <span class="fs-6 text-center" style="min-height: 32px;">[{{ session.group.name }}]</span>
                 </div>
                 <div class="fs-5 text-center">{{ weekday }} {{ session.french_date }}</div>
                 <div class="fs-1 fw-bold text-center" style="word-spacing: 10px;">{{ session.start_hour|date:"H\hi" }} {{ session.stop_hour|date:"H\hi" }}</div>
@@ -116,21 +114,21 @@ function toggle_collapse_button(button) {
                     <div class="progress-bar overflow-visible text-dark bg-info" style="width: {{ session.registration_rate }}%">{{ session.total_swimmers }}/{{ session.capacity }} ({{ session.registration_rate }}%)</div>
                 </div>
                 <div class="collapse mb-2" id="showSwimmers{{ session.id }}" style="font-family: 'Ubuntu Mono';">
-                {% for reg in session.coaches_registration %}
+                {% for reg in session.coach_registrations %}
                     <div class="text-truncate overflow-hidden">
                     {% if reg.is_regular %}
                         <i class="bi bi-stopwatch-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur régulier"></i>
                     {% else %}
                         <i class="bi bi-stopwatch fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel"></i>
                     {% endif %}
-                    {% if reg.swimmer is None %}
+                    {% if reg.swimmer is None %}{# TODO: inutile #}
                         Inconnu
                     {% else %}
                         {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     {% endif %}
                     </div>
                 {% endfor %}
-                {% for reg in session.swimmers_registration %}
+                {% for reg in session.swimmer_registrations %}
                     <div class="text-truncate overflow-hidden">
                     {% if forloop.counter <= session.capacity %}
                         {% if reg.is_regular %}
@@ -145,7 +143,7 @@ function toggle_collapse_button(button) {
                         <i class="bi bi-person-exclamation fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur ponctuel excédentaire"></i>
                         {% endif %}
                     {% endif %}
-                    {% if reg.swimmer is None %}
+                    {% if reg.swimmer is None %}{# TODO: inutile #}
                         Inconnu
                     {% else %}
                         {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
@@ -159,7 +157,7 @@ function toggle_collapse_button(button) {
                         {% csrf_token %}
                         <input type="hidden" name="session_id" value="{{ session.id }}">
                         <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription">
-                        {% if not session.swimmer_registration %}
+                        {% if not session.user_registration %}
                             <button type="submit" name="is_regular" value="true" class="btn btn-outline-success">
                                 <i class="bi bi-infinity fs-5"></i> Régulier
                             </button>
@@ -172,11 +170,11 @@ function toggle_collapse_button(button) {
                                 <i class="bi bi-stopwatch fs-5"></i> Entraîneur
                             </label>
                             {% endif %}
-                        {% elif not session.swimmer_registration.0.is_cancelled %}
+                        {% elif not session.user_registration.0.is_cancelled %}
                             <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
                                 <i class="bi bi-person-dash fs-5"></i> Annuler
                             </button>
-                        {% elif session.swimmer_registration.0.is_cancelled %}
+                        {% elif session.user_registration.0.is_cancelled %}
                             <button type="submit" name="remove" value="true" class="btn btn-outline-light">
                                 <i class="bi bi-trash fs-5"></i> Supprimer
                             </button>
