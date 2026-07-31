@@ -221,8 +221,10 @@ class WeeklySession(models.Model):
                 "L'heure de début de séance doit être antérieure à l'heure de fin"
             )
 
-        # Si on crée une séance pour une semaine future
-        # il faut qu'elle existe dans le semaine courante
+        # TODO: Cette contrainte pourra être levée plus tard si besoin
+        # Attention cela pourrait avoir des impacts dans d'autres parties du code
+
+        # Si on crée une séance pour une semaine future il faut qu'elle existe dans la semaine courante
         if (
             GlobalState.is_future_week(self.year, self.week)
             and not self.__class__.objects.filter(
@@ -244,12 +246,12 @@ class WeeklySession(models.Model):
             current_year = GlobalState.get_year()
             current_week = GlobalState.get_week()
             self.__class__.objects.filter(
+                models.Q(year__gt=current_year)
+                | models.Q(year=current_year, week__gt=current_week)
+            ).filter(
                 group=self.group,
                 weekday=self.weekday,
                 start_hour=self.start_hour,
-            ).filter(
-                models.Q(year__gt=current_year)
-                | models.Q(year=current_year, week__gt=current_week)
             ).delete()
 
         return super().delete(*args, **kwargs)
@@ -336,11 +338,50 @@ class SessionRegistration(models.Model):
                 "Le nageur ne peut pas s'inscrire car il a déjà un entraînement prévu à la même heure"
             )
 
-        # Un nageur ne peut pas s'inscrire à une séance future
+        # TODO: Cette contrainte pourra être levée plus tard si besoin
+        # Dans ce cas on pourrait dire qu'on autorise les inscriptions ponctuelles
+        # dans le futur et que les inscriptions régulières ne doivent correspondre
+        # qu'à des inscriptions régulières de la semaine courante en annulation
+        # C'est beaucoup plus simple que d'autoriser les inscriptions régulières
+        # sans contrainte dans le futur qui seraient difficiles à interpréter
+
+        # Un nageur ou un entraîneur ne peut pas s'inscrire à une séance future
         # mais seulement annuler dans le futur une inscription régulière
-        if not (
-            not self.swimmer_is_coach and self.is_regular and self.is_cancelled
-        ) and GlobalState.is_future_week(self.session.year, self.session.week):
+        if not (self.is_regular and self.is_cancelled) and GlobalState.is_future_week(
+            self.session.year, self.session.week
+        ):
             raise ValidationError(
-                "Un nageur ne peut pas s'inscrire à une séance future"
+                "Un nageur ou un entraîneur ne peut pas s'inscrire à une séance future"
             )
+
+    def delete(self, *args, **kwargs):
+        # Si on a supprimé toutes les inscriptions futures d'une séance
+        # alors on supprime la séance future
+        if (
+            GlobalState.is_future_week(self.session.year, self.session.week)
+            and self.__class__.objects.filter(session=self.session)
+            .exclude(pk=self.pk)
+            .count()
+            == 0
+        ):
+            self.session.delete()
+
+        # Si on supprime une inscription régulière de la semaine courante
+        # alors on supprime toutes les séances futures annulées associées
+        elif self.is_regular and GlobalState.is_current_week(
+            self.session.year, self.session.week
+        ):
+            self.__class__.objects.filter(
+                models.Q(session__year__gt=self.session.year)
+                | models.Q(
+                    session__year=self.session.year, session__week__gt=self.session.week
+                )
+            ).filter(
+                session__group=self.session.group,
+                session__weekday=self.session.weekday,
+                session__start_hour=self.session.start_hour,
+                is_regular=True,
+                is_cancelled=True,
+            ).delete()
+
+        return super().delete(*args, **kwargs)

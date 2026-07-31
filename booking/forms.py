@@ -16,6 +16,8 @@ class ScheduleForm(forms.Form):
 
 
 class EditSessionRegistrationForm(forms.Form):
+    year = forms.IntegerField(label="Année", required=True)
+    week = forms.IntegerField(label="Semaine", required=True)
     session_id = forms.IntegerField(label="Session", required=True)
     is_regular = forms.BooleanField(label="Régulière ?", required=False)
     # Annuler une inscription

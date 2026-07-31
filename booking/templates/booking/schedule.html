@@ -80,7 +80,7 @@ function toggle_collapse_button(button) {
                         for="btn-show-swimmers-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#showSwimmers{{ session.id }}" aria-expanded="false" aria-controls="showSwimmers{{ session.id }}">
                             <i class="bi bi-people-fill"></i>
                         </label>
-                    {% if is_current_week and not session.is_cancelled %}
+                    {% if is_current_week and not session.is_cancelled or is_future_week and session.user_registration.0.is_regular and not session.is_cancelled %}
                         <input type="checkbox" class="btn-check" id="btn-edit-sessions-{{ session.id }}" autocomplete="off">
                         <label class="btn btn-outline-{% if session.background_is_colored %}light{% else %}dark{% endif %} px-2 py-1 me-1" 
                         for="btn-edit-sessions-{{ session.id }}" type="button" data-bs-toggle="collapse" data-bs-target="#editSession{{ session.id }}" aria-expanded="false" aria-controls="editSessions{{ session.id }}">
@@ -155,6 +155,8 @@ function toggle_collapse_button(button) {
                 <div id="editSession{{ session.id }}" class="collapse">
                     <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mb-2">
                         {% csrf_token %}
+                        <input type="hidden" name="year" value="{{ schedule_form.year.value }}">
+                        <input type="hidden" name="week" value="{{ schedule_form.week.value }}">
                         <input type="hidden" name="session_id" value="{{ session.id }}">
                         <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription">
                         {% if not session.user_registration %}
@@ -171,6 +173,27 @@ function toggle_collapse_button(button) {
                             </label>
                             {% endif %}
                         {% elif not session.user_registration.0.is_cancelled %}
+                            <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
+                                <i class="bi bi-person-dash fs-5"></i> Annuler
+                            </button>
+                        {% elif session.user_registration.0.is_cancelled %}
+                            <button type="submit" name="remove" value="true" class="btn btn-outline-light">
+                                <i class="bi bi-trash fs-5"></i> Supprimer
+                            </button>
+                        {% endif %}
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+            {% if is_future_week and session.user_registration.0.is_regular and not session.is_cancelled %}
+                <div id="editSession{{ session.id }}" class="collapse">
+                    <form action="{% url 'edit' %}?next={{ request.get_full_path|urlencode }}" method="post" class="mb-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="year" value="{{ schedule_form.year.value }}">
+                        <input type="hidden" name="week" value="{{ schedule_form.week.value }}">
+                        <input type="hidden" name="session_id" value="{{ session.id }}">
+                        <div class="w-100 d-flex flex-column gap-2" role="group" aria-label="Inscription">
+                        {% if not session.user_registration.0.is_cancelled %}
                             <button type="submit" name="is_cancelled" value="true" class="btn btn-danger">
                                 <i class="bi bi-person-dash fs-5"></i> Annuler
                             </button>
