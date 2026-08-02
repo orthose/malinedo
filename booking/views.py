@@ -39,7 +39,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    week_schedule = None
+    week_schedule_query = None
 
     # Vérification du formulaire
     if schedule_form.is_valid():
@@ -60,9 +60,10 @@ def schedule(request: HttpRequest) -> HttpResponse:
         session_filters["group__groups__in"] = request.user.groups.all()
 
         # Requête du planning des séances et inscriptions pour la semaine
-        week_schedule = WeekScheduleQuery(
+        week_schedule_query = WeekScheduleQuery(
             year, week, request.user, **session_filters
-        ).get_schedule()
+        )
+        week_schedule_query.load_schedule()
 
     # Formulaire invalide
     else:
@@ -71,7 +72,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
     # Séances par jour de la semaine
     weekday_sessions = {weekday: [] for weekday in WeeklySession.WEEKDAY.values()}
 
-    for session in week_schedule:
+    for session in week_schedule_query:
         session.background_is_colored = (
             session.is_cancelled or session.user_registration
         )
@@ -96,6 +97,7 @@ def schedule(request: HttpRequest) -> HttpResponse:
         "is_current_week": GlobalState.is_current_week(year, week),
         "is_future_week": GlobalState.is_future_week(year, week),
         "is_coach": request.user.is_coach,
+        "user_registration_count": week_schedule_query.user_registration_count,
     }
 
     return render(request, "booking/schedule.html", context)
@@ -104,12 +106,27 @@ def schedule(request: HttpRequest) -> HttpResponse:
 @login_required
 @transaction.atomic
 def edit(request: HttpRequest) -> HttpResponse:
+    """
+    TODO: Le graphe des changements d'état des inscriptions est uniquement implémenté côté template.
+    Il fautdrait l'implémenter côté serveur en plus.
+
+    0 --- Régulier  ---> 1
+    0 --- Ponctuel  ---> 1
+    1 --- Annuler   ---> 2
+    2 --- Supprimer ---> 0
+    """
     request.user = cast(User, request.user)
 
     if request.method == "POST" and "next" in request.GET:
         form = EditSessionRegistrationForm(request.POST)
 
-        if form.is_valid():
+        if (
+            form.is_valid()
+            # On ne peut pas modifier une semaine passée
+            and not GlobalState.is_past_week(
+                form.cleaned_data["year"], form.cleaned_data["week"]
+            )
+        ):
             session = WeeklySession.objects.get(pk=form.cleaned_data["session_id"])
 
             # Suppression de l'inscription
@@ -180,7 +197,7 @@ def edit(request: HttpRequest) -> HttpResponse:
                     # Des vérifications sont faites dans SessionRegistration.clean()
                     registration.full_clean()
 
-            # Permet de garder les arguments year et week
+            # Permet de garder les arguments year et week lors de la redirection
             return redirect(request.GET["next"])
 
     return HttpResponseBadRequest("Formulaire d'édition d'inscription invalide")

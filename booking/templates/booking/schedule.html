@@ -49,8 +49,8 @@ function toggle_collapse_button(button) {
                 {{ schedule_form.year.label|upper }}&nbsp;<b class="fs-1">{{ schedule_form.year.value }}</b>
             </h1>
         </div>
-        <div class="text-center {% if user.count_registrations == 0 %}alert alert-info{% elif user.count_registrations > user.max_registrations_per_week %}alert alert-danger{% else %}alert alert-success{% endif %}">
-            Vous êtes inscrit à <b>{{ user.count_registrations }}</b> sur <b>{{ user.max_registrations_per_week }}</b> séance(s).
+        <div class="text-center {% if user_registration_count == 0 %}alert alert-info{% elif user_registration_count > user.max_registrations_per_week %}alert alert-danger{% else %}alert alert-success{% endif %}">
+            Vous êtes inscrit à <b>{{ user_registration_count }}</b> sur <b>{{ user.max_registrations_per_week }}</b> séance(s).
         </div>
     </form>
 </div>

@@ -84,14 +84,3 @@ class User(AbstractUser):
         max_registrations.append(0)
 
         return max(max_registrations)
-
-    @property
-    def count_registrations(self) -> int:
-        from booking.models import SessionRegistration
-
-        return SessionRegistration.objects.filter(
-            swimmer=self,
-            is_cancelled=False,
-            swimmer_is_coach=False,
-            session__is_cancelled=False,
-        ).count()

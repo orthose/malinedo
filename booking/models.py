@@ -76,6 +76,12 @@ class GlobalState(models.Model):
         current_week = cls.get_week()
         return year > current_year or (year == current_year and week > current_week)
 
+    @classmethod
+    def is_past_week(cls, year: int, week: int) -> bool:
+        current_year = cls.get_year()
+        current_week = cls.get_week()
+        return year < current_year or (year == current_year and week < current_week)
+
 
 class SessionGroup(models.Model):
     """

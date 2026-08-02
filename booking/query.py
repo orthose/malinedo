@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from django.db import models
 
 from accounts.models import User
@@ -34,6 +36,10 @@ class WeekScheduleQuery:
         self.user = user
         self.session_filters = session_filters
         self.is_future_week = GlobalState.is_future_week(year, week)
+        self.schedule: WeekSchedule = None
+
+    def __iter__(self) -> Iterator[WeeklySession]:
+        return iter(self.schedule)
 
     def __get_queryset_schedule(
         self, year: int, week: int
@@ -155,13 +161,14 @@ class WeekScheduleQuery:
         """
         registrations[:] = [reg for reg in registrations if not reg.is_cancelled]
 
-    def get_schedule(self) -> WeekSchedule:
+    def load_schedule(self) -> None:
         """
-        Renvoie le planning pour une semaine donnée.
+        Charge le planning pour une semaine donnée.
         """
         schedule_requested_week = list(
             self.__get_queryset_schedule(self.year, self.week)
         )
+        self.schedule = schedule_requested_week
 
         if self.is_future_week:
             current_year = GlobalState.get_year()
@@ -226,6 +233,16 @@ class WeekScheduleQuery:
             # On ajoute au planning toutes les séances futures
             schedule_future_week.extend(schedule_requested_week)
 
-            return schedule_future_week
+            self.schedule = schedule_future_week
 
-        return schedule_requested_week
+    @property
+    def user_registration_count(self) -> int:
+        res = 0
+
+        for session in self.schedule:
+            if not session.is_cancelled and session.user_registration:
+                reg = session.user_registration[0]
+                if not reg.is_cancelled and not reg.swimmer_is_coach:
+                    res += 1
+
+        return res
