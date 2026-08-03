@@ -253,8 +253,7 @@ class WeeklySession(models.Model):
             current_week = GlobalState.get_week()
             self.__class__.objects.filter(
                 models.Q(year__gt=current_year)
-                | models.Q(year=current_year, week__gt=current_week)
-            ).filter(
+                | models.Q(year=current_year, week__gt=current_week),
                 group=self.group,
                 weekday=self.weekday,
                 start_hour=self.start_hour,
@@ -381,8 +380,7 @@ class SessionRegistration(models.Model):
                 models.Q(session__year__gt=self.session.year)
                 | models.Q(
                     session__year=self.session.year, session__week__gt=self.session.week
-                )
-            ).filter(
+                ),
                 session__group=self.session.group,
                 session__weekday=self.session.weekday,
                 session__start_hour=self.session.start_hour,

@@ -44,6 +44,13 @@ class WeeklySessionAdmin(admin.ModelAdmin):
     def unlock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=False)
 
+    def delete_queryset(self, request, queryset):
+        """
+        Permet d'appliquer la logique de suppression de WeeklySession.delete()
+        """
+        for obj in queryset:
+            self.delete_model(request, obj)
+
 
 @admin.register(SessionRegistration)
 class SessionRegistrationAdmin(admin.ModelAdmin):
@@ -69,6 +76,13 @@ class SessionRegistrationAdmin(admin.ModelAdmin):
         "is_cancelled",
         "swimmer_is_coach",
     ]
+
+    def delete_queryset(self, request, queryset):
+        """
+        Permet d'appliquer la logique de suppression de SessionRegistration.delete()
+        """
+        for obj in queryset:
+            self.delete_model(request, obj)
 
 
 admin.site.register(GlobalState)
