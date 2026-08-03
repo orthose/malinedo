@@ -106,15 +106,6 @@ def schedule(request: HttpRequest) -> HttpResponse:
 @login_required
 @transaction.atomic
 def edit(request: HttpRequest) -> HttpResponse:
-    """
-    TODO: Le graphe des changements d'état des inscriptions est uniquement implémenté côté template.
-    Il fautdrait l'implémenter côté serveur en plus.
-
-    0 --- Régulier  ---> 1
-    0 --- Ponctuel  ---> 1
-    1 --- Annuler   ---> 2
-    2 --- Supprimer ---> 0
-    """
     request.user = cast(User, request.user)
 
     if request.method == "POST" and "next" in request.GET:
@@ -131,12 +122,16 @@ def edit(request: HttpRequest) -> HttpResponse:
 
             # Suppression de l'inscription
             if form.cleaned_data["remove"]:
-                registration = SessionRegistration.objects.get(
+                reg = SessionRegistration.objects.get(
                     swimmer=request.user, session=session
                 )
-                # On ne peut supprimer une inscription que si on l'a annulée
-                if registration.is_cancelled:
-                    registration.delete()
+
+                if not reg.is_cancelled:
+                    return HttpResponseBadRequest(
+                        "Une inscription ne peut être supprimée que si elle est annulée"
+                    )
+
+                reg.delete()
 
             # Création ou modification de l'inscription
             else:
@@ -148,25 +143,23 @@ def edit(request: HttpRequest) -> HttpResponse:
                     # L'inscription future n'existe pas encore et on l'annule
                     # Comme c'est une inscription importée de la semaine courante
                     # on importe les champs de cette inscription
-                    try:
-                        registration = SessionRegistration.objects.get(
-                            swimmer=request.user,
-                            # On ne peut pas filtrer simplement par session
-                            # car cela peut être une session courant ou future
-                            # Or on veut récupérer l'inscription de la séance courante
-                            session__year=GlobalState.get_year(),
-                            session__week=GlobalState.get_week(),
-                            session__group=session.group,
-                            session__weekday=session.weekday,
-                            session__start_hour=session.start_hour,
-                        )
-                        for field in ["is_regular", "is_cancelled", "swimmer_is_coach"]:
-                            registration_fields[field] = getattr(registration, field)
+                    reg = SessionRegistration.objects.filter(
+                        swimmer=request.user,
+                        # On ne peut pas filtrer simplement par session
+                        # car cela peut être une session courant ou future
+                        # Or on veut récupérer l'inscription de la séance courante
+                        session__year=GlobalState.get_year(),
+                        session__week=GlobalState.get_week(),
+                        session__group=session.group,
+                        session__weekday=session.weekday,
+                        session__start_hour=session.start_hour,
+                    ).first()
 
                     # Si l'inscription courante n'existe pas on ne fait rien
                     # Les champs seront complétés par le formulaire
-                    except SessionRegistration.DoesNotExist:
-                        pass
+                    if reg:
+                        for field in ["is_regular", "is_cancelled", "swimmer_is_coach"]:
+                            registration_fields[field] = getattr(reg, field)
 
                     # L'inscription concerne une séance de la semaine courante pour une semaine future
                     if GlobalState.is_current_week(session.year, session.week):
@@ -189,13 +182,28 @@ def edit(request: HttpRequest) -> HttpResponse:
                         registration_fields[field] = form.cleaned_data[field]
 
                 if registration_fields:
-                    registration, _ = SessionRegistration.objects.update_or_create(
+                    reg = SessionRegistration.objects.filter(
+                        swimmer=request.user,
+                        session=session,
+                    ).first()
+
+                    if (
+                        reg
+                        and reg.is_cancelled
+                        and "is_cancelled" in registration_fields
+                        and not registration_fields["is_cancelled"]
+                    ):
+                        return HttpResponseBadRequest(
+                            "Une inscription annulée doit être supprimée avant d'être renouvelée"
+                        )
+
+                    reg, _ = SessionRegistration.objects.update_or_create(
                         swimmer=request.user,
                         session=session,
                         defaults=registration_fields,
                     )
                     # Des vérifications sont faites dans SessionRegistration.clean()
-                    registration.full_clean()
+                    reg.full_clean()
 
             # Permet de garder les arguments year et week lors de la redirection
             return redirect(request.GET["next"])
