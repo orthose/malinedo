@@ -20,6 +20,11 @@ class SessionGroupAdmin(admin.ModelAdmin):
 
 @admin.register(WeeklySession)
 class WeeklySessionAdmin(admin.ModelAdmin):
+    """
+    TODO: Annuler une séance dans le futur
+    Si besoin peut être implémenté hors de l'interface admin
+    """
+
     ordering = [
         "year",
         "week",

@@ -99,6 +99,10 @@ def schedule(request: HttpRequest) -> HttpResponse:
 @login_required
 @transaction.atomic
 def edit(request: HttpRequest) -> HttpResponse:
+    """
+    TODO: Mettre une limite de date d'annulation dans le futur
+    qui s'arrête à la fin de la saison
+    """
     request.user = cast(User, request.user)
 
     if request.method == "POST" and "next" in request.GET:
