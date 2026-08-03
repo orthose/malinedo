@@ -43,25 +43,18 @@ def schedule(request: HttpRequest) -> HttpResponse:
 
     # Vérification du formulaire
     if schedule_form.is_valid():
-        session_filters = {}
-
         # Enregistrement dans la session utilisateur du filtre des séances
         request.session["mysessions"] = schedule_form.cleaned_data["mysessions"]
 
         year = schedule_form.cleaned_data["year"]
         week = schedule_form.cleaned_data["week"]
 
-        # Filtre des séances du nageur
-        if schedule_form.cleaned_data["mysessions"]:
-            session_filters["sessionregistration__swimmer"] = request.user
-
-        # Filtre des groupes du nageur
-        # TODO: Gérer group = NULL
-        session_filters["group__groups__in"] = request.user.groups.all()
-
         # Requête du planning des séances et inscriptions pour la semaine
         week_schedule_query = WeekScheduleQuery(
-            year, week, request.user, **session_filters
+            year,
+            week,
+            request.user,
+            only_user_sessions=schedule_form.cleaned_data["mysessions"],
         )
         week_schedule_query.load_schedule()
 
@@ -213,10 +206,9 @@ def edit(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def groups(request: HttpRequest) -> HttpRequest:
-    # TODO: La gestion des groupes a évolué
     context = {
         "session_groups": SessionGroup.objects.filter(
-            group__in=request.user.groups.all()
+            groups__in=request.user.groups.all()
         ),
         "admins": User.objects.filter(is_staff=True, is_superuser=False),
     }

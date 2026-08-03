@@ -22,19 +22,18 @@ class WeekScheduleQuery:
     ou de la modification d'une séance ou d'une inscription.
     """
 
-    def __init__(self, year: int, week: int, user: User, **session_filters):
+    def __init__(self, year: int, week: int, user: User, only_user_sessions: bool):
         """
         :param year: Année de consultation
         :param week: Semaine de consultation
         :param user: Utilisateur pour lequel construire le planning
-        :param session_filters:
-            Filtres supplémentaires à appliquer aux séances.
-            Ils ne doivent pas inclure year et week.
+        :param only_user_sessions:
+            Filtre pour ne garder que les séances auxquelles est inscrit l'utilisateur
         """
         self.year = year
         self.week = week
         self.user = user
-        self.session_filters = session_filters
+        self.only_user_sessions = only_user_sessions
         self.is_future_week = GlobalState.is_future_week(year, week)
         self.schedule: WeekSchedule = None
 
@@ -47,6 +46,12 @@ class WeekScheduleQuery:
         """
         Construit le QuerySet de WeeklySessionPrefetchedRegistrations pour une semaine donnée.
         """
+        session_filters = (
+            {"sessionregistration__swimmer": self.user}
+            if self.only_user_sessions
+            else {}
+        )
+
         user_registration_filters = (
             # Seules les inscriptions régulières de l'utilisateur de la semaine courante sont reportées dans le futur
             {"is_regular": True}
@@ -68,8 +73,13 @@ class WeekScheduleQuery:
         )
 
         return (
-            WeeklySession.objects.filter(year=year, week=week, **self.session_filters)
-            .distinct()  # TODO: A quoi ça sert ? Normalement à rien car group est devenu singulier
+            WeeklySession.objects.filter(
+                models.Q(group__groups__in=self.user.groups.all())
+                | models.Q(group__isnull=True),
+                year=year,
+                week=week,
+                **session_filters,
+            )
             .select_related("group")
             .order_by("weekday", "start_hour")
             # Prefetch se charge de joindre par clé étrangère session
@@ -112,7 +122,7 @@ class WeekScheduleQuery:
                     to_attr="swimmer_registrations",
                 )
             )
-            # TODO: Ajouter plus tard swimmers_cancelled_registration
+            # TODO: Ajouter plus tard swimmers_cancelled_registrations
         )
 
     def __session_key(self, session: WeeklySession) -> tuple:
