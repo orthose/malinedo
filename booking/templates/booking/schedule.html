@@ -121,11 +121,7 @@ function toggle_collapse_button(button) {
                     {% else %}
                         <i class="bi bi-stopwatch fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel"></i>
                     {% endif %}
-                    {% if reg.swimmer is None %}{# TODO: inutile #}
-                        Inconnu
-                    {% else %}
-                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
-                    {% endif %}
+                    {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     </div>
                 {% endfor %}
                 {% for reg in session.swimmer_registrations %}
@@ -143,11 +139,7 @@ function toggle_collapse_button(button) {
                         <i class="bi bi-person-exclamation fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur ponctuel excédentaire"></i>
                         {% endif %}
                     {% endif %}
-                    {% if reg.swimmer is None %}{# TODO: inutile #}
-                        Inconnu
-                    {% else %}
-                        {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
-                    {% endif %}
+                    {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     </div>
                 {% endfor %}
                 </div>

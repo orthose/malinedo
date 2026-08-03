@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -42,24 +44,28 @@ class User(AbstractUser):
     def delete(self, *args, **kwargs):
         from booking.models import SessionRegistration, GlobalState
 
-        # Utilisateur anonymisé
-        deleted_user = self.__class__.objects.get_or_create(
-            username=f"deleted-{self.pk}@malinedo.invalid",
-            first_name="Inconnu",
-            last_name=self.pk,
-            enable_notifications=False,
-        )[0]
+        if not re.fullmatch(r"deleted-\d+@malinedo\.invalid", self.username):
+            # Utilisateur anonymisé
+            deleted_user = self.__class__.objects.get_or_create(
+                username=f"deleted-{self.pk}@malinedo.invalid",
+                first_name="Inconnu",
+                last_name=self.pk,
+                enable_notifications=False,
+                is_active=False,
+            )[0]
 
-        # Suppression des inscriptions des semaines en cours et futures
-        current_year = GlobalState.get_year()
-        current_week = GlobalState.get_week()
-        SessionRegistration.objects.filter(swimmer=self).filter(
-            models.Q(year__gt=current_year)
-            | models.Q(year=current_year, week__gte=current_week)
-        ).delete()
+            # Suppression des inscriptions des semaines en cours et futures
+            current_year = GlobalState.get_year()
+            current_week = GlobalState.get_week()
+            SessionRegistration.objects.filter(swimmer=self).filter(
+                models.Q(session__year__gt=current_year)
+                | models.Q(session__year=current_year, session__week__gte=current_week)
+            ).delete()
 
-        # Anonymisation de l'historique des inscriptions
-        SessionRegistration.objects.filter(swimmer=self).update(swimmer=deleted_user)
+            # Anonymisation de l'historique des inscriptions
+            SessionRegistration.objects.filter(swimmer=self).update(
+                swimmer=deleted_user
+            )
 
         return super().delete(*args, **kwargs)
 
