@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -35,9 +37,37 @@ class User(AbstractUser):
     )
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Forcer email = username
+        # Forcer email = username puis sauvegarder
         self.email = self.username
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        from booking.models import SessionRegistration, GlobalState
+
+        if not re.fullmatch(r"deleted-\d+@malinedo\.invalid", self.username):
+            # Utilisateur anonymisé
+            deleted_user = self.__class__.objects.get_or_create(
+                username=f"deleted-{self.pk}@malinedo.invalid",
+                first_name="Inconnu",
+                last_name=self.pk,
+                enable_notifications=False,
+                is_active=False,
+            )[0]
+
+            # Suppression des inscriptions des semaines en cours et futures
+            current_year = GlobalState.get_year()
+            current_week = GlobalState.get_week()
+            SessionRegistration.objects.filter(swimmer=self).filter(
+                models.Q(session__year__gt=current_year)
+                | models.Q(session__year=current_year, session__week__gte=current_week)
+            ).delete()
+
+            # Anonymisation de l'historique des inscriptions
+            SessionRegistration.objects.filter(swimmer=self).update(
+                swimmer=deleted_user
+            )
+
+        return super().delete(*args, **kwargs)
 
     @property
     def is_board_member(self) -> bool:
@@ -54,20 +84,9 @@ class User(AbstractUser):
         max_registrations = [
             session_group.max_registrations_per_week
             for session_group in SessionGroup.objects.filter(
-                group__in=self.groups.all()
+                groups__in=self.groups.all()
             )
         ]
         max_registrations.append(0)
 
         return max(max_registrations)
-
-    @property
-    def count_registrations(self) -> int:
-        from booking.models import SessionRegistration
-
-        return SessionRegistration.objects.filter(
-            swimmer=self,
-            is_cancelled=False,
-            swimmer_is_coach=False,
-            session__is_cancelled=False,
-        ).count()

@@ -1,303 +1,13 @@
 import datetime
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-
-def get_year_field() -> models.Field:
-    return models.IntegerField("année")
+from accounts.models import User
 
 
-def get_week_field() -> models.Field:
-    return models.PositiveSmallIntegerField(
-        "semaine",
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(53),
-        ],
-    )
-
-
-class SessionGroup(models.Model):
-    """
-    Groupe de niveau de nage
-
-    En fonction du groupe auquel un nageur appartient,
-    il ne peut pas s'inscrire à plus d'un certain
-    nombre de séances par semaine
-    """
-
-    group = models.OneToOneField(Group, on_delete=models.CASCADE, verbose_name="Groupe")
-    max_registrations_per_week = models.PositiveSmallIntegerField(
-        verbose_name="Limite d'inscriptions hebdomadaires par nageur",
-    )
-
-    def __str__(self) -> str:
-        return self.group.name
-
-    @property
-    def name(self) -> str:
-        return self.group.name
-
-    class Meta:
-        verbose_name = "groupe de nage"
-        verbose_name_plural = "groupes de nage"
-
-
-class AbstractWeeklySession(models.Model):
-    WEEKDAY = {
-        1: "Lundi",
-        2: "Mardi",
-        3: "Mercredi",
-        4: "Jeudi",
-        5: "Vendredi",
-        6: "Samedi",
-        7: "Dimanche",
-    }
-
-    groups = models.ManyToManyField(SessionGroup, verbose_name="Groupes")
-    weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAY)
-    start_hour = models.TimeField("Heure début")
-    stop_hour = models.TimeField("Heure fin")
-    capacity = models.PositiveSmallIntegerField("Capacité")
-    is_cancelled = models.BooleanField("Est annulée ?", default=False)
-
-    @property
-    def group_names(self) -> list[str]:
-        return [
-            session_group.name for session_group in self.groups.order_by("pk").all()
-        ]
-
-    @property
-    def duration(self) -> datetime.timedelta:
-        dt_start_hour = datetime.datetime.combine(
-            datetime.date(1, 1, 1), self.start_hour
-        )
-        dt_stop_hour = datetime.datetime.combine(datetime.date(1, 1, 1), self.stop_hour)
-        return dt_stop_hour - dt_start_hour
-
-    @property
-    def total_swimmers(self) -> int:
-        pass
-
-    @property
-    def registration_rate(self) -> int:
-        return round(self.total_swimmers * 100 / self.capacity)
-
-    @property
-    def french_weekday(self) -> str:
-        return self.WEEKDAY[self.weekday]
-
-    @property
-    def french_date(self) -> str:
-        pass
-
-    def __str__(self) -> str:
-        groups_name = "|".join([group.name for group in self.groups.order_by("pk")])
-        return f"[{groups_name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
-
-    def clean(self):
-        if self.start_hour >= self.stop_hour:
-            raise ValidationError(
-                "L'heure de début de séance doit être antérieure à l'heure de fin"
-            )
-
-    class Meta:
-        abstract = True
-
-
-class WeeklySession(AbstractWeeklySession):
-    """
-    Créneaux d'entraînement hebdomadaires définis en début d'année
-
-    L'unicité de chaque créneau est défini par:
-        + Groupes de niveau (ex: Loisir, Compétition)
-        + Jour de la semaine
-        + Heure de début
-
-    La contrainte d'unicité est vérifiée côté formulaire admin.
-
-    Les autres champs à compléter pour chaque créneau sont:
-        + Heure de fin
-        + Capacité (nombre de nageurs)
-
-    Les autres champs diponibles pour chaque créneau sont:
-        + Le créneau est-il annulé cette semaine ?
-        + Durée de la séance
-        + Nombre de nageurs inscrits
-        + Taux d'inscriptions
-        + Liste des nageurs inscrits
-        + Liste des entraîneurs inscrits
-    """
-
-    @property
-    def total_swimmers(self) -> int:
-        return SessionRegistration.objects.filter(
-            session=self, is_cancelled=False, swimmer_is_coach=False
-        ).count()
-
-    @property
-    def french_date(self) -> str:
-        return datetime.datetime.fromisocalendar(
-            GlobalSetting.get_year(),
-            GlobalSetting.get_week(),
-            self.weekday,
-        ).strftime("%d/%m/%Y")
-
-    def save_to_history(self, year: int, week: int) -> "WeeklySessionHistory":
-        session = self.__dict__.copy()
-        session.pop("id")
-        session.pop("_state")
-        session["year"] = year
-        session["week"] = week
-
-        session_history = WeeklySessionHistory(**session)
-        session_history.save()
-
-        for session_group in self.groups.all():
-            session_history.groups.add(session_group)
-
-        return session_history
-
-    class Meta:
-        verbose_name = "session hebdomadaire"
-        verbose_name_plural = "sessions hebdomadaires"
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(start_hour__lt=models.F("stop_hour")),
-                name="check_weekly_session_start_hour_before_stop_hour",
-            ),
-        ]
-
-
-class WeeklySessionHistory(AbstractWeeklySession):
-    """
-    Historique des sessions pour les statistiques
-    """
-
-    year = get_year_field()
-    week = get_week_field()
-
-    @property
-    def total_swimmers(self) -> int:
-        return SessionRegistrationHistory.objects.filter(
-            session=self, is_cancelled=False, swimmer_is_coach=False
-        ).count()
-
-    @property
-    def french_date(self) -> str:
-        return datetime.datetime.fromisocalendar(
-            self.year,
-            self.week,
-            self.weekday,
-        ).strftime("%d/%m/%Y")
-
-    def __str__(self) -> str:
-        return f"{self.year}-{self.week} " + super().__str__()
-
-    class Meta:
-        verbose_name = "historique session hebdomadaire"
-        verbose_name_plural = "historique sessions hebdomadaires"
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(start_hour__lt=models.F("stop_hour")),
-                name="check_weekly_session_history_start_hour_before_stop_hour",
-            ),
-        ]
-
-
-class AbstractSessionRegistration(models.Model):
-    swimmer = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.CASCADE,
-        verbose_name="Nageur",
-    )
-    session = models.ForeignKey(
-        WeeklySession,
-        on_delete=models.CASCADE,
-        verbose_name="Session",
-    )
-    is_regular = models.BooleanField("Est régulière ?")
-    is_cancelled = models.BooleanField("Est annulée ?", default=False)
-    swimmer_is_coach = models.BooleanField("Est entraîneur ?", default=False)
-
-    def __str__(self) -> str:
-        if self.swimmer is None:
-            return f"(Inconnu) {self.session}"
-        return f"({self.swimmer.first_name} {self.swimmer.last_name.upper()}) {self.session}"
-
-    class Meta:
-        abstract = True
-
-
-class SessionRegistration(AbstractSessionRegistration):
-    """
-    Inscription des nageurs aux entraînements de la semaine
-
-    L'unicité de chaque inscription est définie par:
-        + Nageur
-        + Créneau
-
-    Ainsi un nageur ne peut pas s'inscrire deux fois au même créneau
-
-    Les autres champs à compléter pour chaque inscription sont:
-        + Est-ce le créneau d'inscription habituel du nageur ?
-        + Le nageur a-t-il annulé son inscription cette semaine ?
-        + Le nageur est-il l'entraîneur de la séance ?
-    """
-
-    def to_history(self, session_history_pk: int) -> "SessionRegistrationHistory":
-        registration = self.__dict__.copy()
-        registration.pop("id")
-        registration.pop("_state")
-        registration["session_id"] = session_history_pk
-        return SessionRegistrationHistory(**registration)
-
-    class Meta:
-        verbose_name = "inscription session"
-        verbose_name_plural = "inscriptions sessions"
-        constraints = [
-            models.UniqueConstraint(
-                "swimmer",
-                "session",
-                name="unique_swimmer_for_one_session",
-            ),
-        ]
-
-
-class SessionRegistrationHistory(AbstractSessionRegistration):
-    """
-    Historique des inscriptions pour les statistiques
-    """
-
-    swimmer = models.ForeignKey(
-        get_user_model(),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Nageur",
-    )
-    session = models.ForeignKey(
-        WeeklySessionHistory,
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        verbose_name = "historique inscription session"
-        verbose_name_plural = "historique inscriptions sessions"
-        constraints = [
-            models.UniqueConstraint(
-                "swimmer",
-                "session",
-                name="unique_swimmer_for_one_session_history",
-            ),
-        ]
-        permissions = []
-
-
-class GlobalSetting(models.Model):
+class GlobalState(models.Model):
     CURRENT_YEAR = "CURRENT_YEAR"
     CURRENT_WEEK = "CURRENT_WEEK"
     TYPE = {
@@ -355,3 +65,327 @@ class GlobalSetting(models.Model):
     @classmethod
     def set_week(cls, week: int):
         cls.set_value(cls.CURRENT_WEEK, week, "int")
+
+    @classmethod
+    def is_current_week(cls, year: int, week: int) -> bool:
+        return cls.get_year() == year and cls.get_week() == week
+
+    @classmethod
+    def is_future_week(cls, year: int, week: int) -> bool:
+        current_year = cls.get_year()
+        current_week = cls.get_week()
+        return year > current_year or (year == current_year and week > current_week)
+
+    @classmethod
+    def is_past_week(cls, year: int, week: int) -> bool:
+        current_year = cls.get_year()
+        current_week = cls.get_week()
+        return year < current_year or (year == current_year and week < current_week)
+
+
+class SessionGroup(models.Model):
+    """
+    Groupe de niveau de nage
+
+    En fonction du groupe auquel un nageur appartient,
+    il ne peut pas s'inscrire à plus d'un certain
+    nombre de séances par semaine
+    """
+
+    name = models.CharField("Nom", max_length=255, unique=True)
+    groups = models.ManyToManyField(Group, verbose_name="Groupes")
+    max_registrations_per_week = models.PositiveSmallIntegerField(
+        verbose_name="Limite d'inscriptions hebdomadaires par nageur",
+    )
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        verbose_name = "groupe de nage"
+        verbose_name_plural = "groupes de nage"
+
+
+class WeeklySession(models.Model):
+    """
+    Séances d'entraînement hebdomadaires définis en début d'année
+
+    L'unicité de chaque séance est définie par:
+        + Année
+        + Semaine
+        + Groupe de niveau (ex: Loisir, Compétition)
+        + Jour de la semaine
+        + Heure de début
+
+    Les autres champs à compléter pour chaque séance sont:
+        + Heure de fin
+        + Capacité (nombre de nageurs)
+
+    Les autres champs diponibles pour chaque séance sont:
+        + La séance est-elle annulée cette semaine ?
+        + Durée de la séance
+        + Nombre de nageurs inscrits
+        + Taux d'inscriptions
+        + Liste des nageurs inscrits
+        + Liste des entraîneurs inscrits
+    """
+
+    WEEKDAY = {
+        1: "Lundi",
+        2: "Mardi",
+        3: "Mercredi",
+        4: "Jeudi",
+        5: "Vendredi",
+        6: "Samedi",
+        7: "Dimanche",
+    }
+
+    year = models.IntegerField("année", default=GlobalState.get_year)
+    week = models.PositiveSmallIntegerField(
+        "semaine",
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(53),
+        ],
+        default=GlobalState.get_week,
+    )
+    group = models.ForeignKey(
+        SessionGroup,
+        # Si le groupe est NULL n'importe qui peut s'inscire à la séance
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Groupe",
+    )
+    weekday = models.PositiveSmallIntegerField("Jour", choices=WEEKDAY)
+    start_hour = models.TimeField("Heure début")
+    stop_hour = models.TimeField("Heure fin")
+    capacity = models.PositiveSmallIntegerField("Capacité")
+    is_cancelled = models.BooleanField("Est annulée ?", default=False)
+
+    # Champs construits en mémoire par WeekScheduleQuery
+    user_registration: list["SessionRegistration"]
+    coach_registrations: list["SessionRegistration"]
+    swimmer_registrations: list["SessionRegistration"]
+
+    class Meta:
+        verbose_name = "session hebdomadaire"
+        verbose_name_plural = "sessions hebdomadaires"
+        indexes = [
+            models.Index(fields=["year", "week"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                "year",
+                "week",
+                "group",
+                "weekday",
+                "start_hour",
+                name="unique_weekly_session_hour_per_group",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(start_hour__lt=models.F("stop_hour")),
+                name="check_weekly_session_start_hour_before_stop_hour",
+            ),
+        ]
+
+    @property
+    def duration(self) -> datetime.timedelta:
+        dt_start_hour = datetime.datetime.combine(
+            datetime.date(1, 1, 1), self.start_hour
+        )
+        dt_stop_hour = datetime.datetime.combine(datetime.date(1, 1, 1), self.stop_hour)
+        return dt_stop_hour - dt_start_hour
+
+    @property
+    def total_swimmers(self) -> int:
+        return len(self.swimmer_registrations)
+
+    @property
+    def registration_rate(self) -> int:
+        return round(self.total_swimmers * 100 / self.capacity)
+
+    @property
+    def french_weekday(self) -> str:
+        return self.WEEKDAY[self.weekday]
+
+    @property
+    def french_date(self) -> str:
+        return datetime.datetime.fromisocalendar(
+            self.year,
+            self.week,
+            self.weekday,
+        ).strftime("%d/%m/%Y")
+
+    def __str__(self) -> str:
+        group_name = self.group.name if self.group is not None else "Aucun"
+        return f"{self.year}-{self.week} [{group_name}] {self.WEEKDAY[self.weekday]} {self.start_hour.strftime('%Hh%M')}-{self.stop_hour.strftime('%Hh%M')}"
+
+    def clean(self):
+        if self.start_hour >= self.stop_hour:
+            raise ValidationError(
+                "L'heure de début de séance doit être antérieure à l'heure de fin"
+            )
+
+        # TODO: Cette contrainte pourra être levée plus tard si besoin
+        # Attention cela pourrait avoir des impacts dans d'autres parties du code
+
+        # Si on crée une séance pour une semaine future il faut qu'elle existe dans la semaine courante
+        if (
+            GlobalState.is_future_week(self.year, self.week)
+            and not self.__class__.objects.filter(
+                year=GlobalState.get_year(),
+                week=GlobalState.get_week(),
+                group=self.group,
+                weekday=self.weekday,
+                start_hour=self.start_hour,
+            ).exists()
+        ):
+            raise ValidationError(
+                "La séance future ne peut pas être créée car elle n'existe pas pour la semaine courante"
+            )
+
+    def delete(self, *args, **kwargs):
+        # Si on supprime une séance de la semaine courante
+        # il faut supprimer les séances futures associées
+        if GlobalState.is_current_week(self.year, self.week):
+            current_year = GlobalState.get_year()
+            current_week = GlobalState.get_week()
+            self.__class__.objects.filter(
+                models.Q(year__gt=current_year)
+                | models.Q(year=current_year, week__gt=current_week),
+                group=self.group,
+                weekday=self.weekday,
+                start_hour=self.start_hour,
+            ).delete()
+
+        return super().delete(*args, **kwargs)
+
+
+class SessionRegistration(models.Model):
+    """
+    Inscription des nageurs aux entraînements de la semaine
+
+    L'unicité de chaque inscription est définie par:
+        + Nageur
+        + Séance
+
+    Ainsi un nageur ne peut pas s'inscrire deux fois à la même séance
+
+    Les autres champs à compléter pour chaque inscription sont:
+        + Est-ce la séance d'inscription habituelle du nageur ?
+        + Le nageur a-t-il annulé son inscription cette semaine ?
+        + Le nageur est-il l'entraîneur de la séance ?
+    """
+
+    swimmer = models.ForeignKey(
+        User,
+        # La logique de suppression des inscriptions en fonction de la semaine
+        # est dans accounts/models/User.delete et s'exécute avant le on_delete
+        on_delete=models.CASCADE,
+        verbose_name="Nageur",
+    )
+    session = models.ForeignKey(
+        WeeklySession,
+        on_delete=models.CASCADE,
+        verbose_name="Session",
+    )
+    is_regular = models.BooleanField("Est régulière ?")
+    is_cancelled = models.BooleanField("Est annulée ?", default=False)
+    swimmer_is_coach = models.BooleanField("Est entraîneur ?", default=False)
+
+    class Meta:
+        verbose_name = "inscription session"
+        verbose_name_plural = "inscriptions sessions"
+        constraints = [
+            models.UniqueConstraint(
+                "swimmer",
+                "session",
+                name="unique_swimmer_for_one_session",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"({self.swimmer.first_name} {self.swimmer.last_name.upper()}) {self.session}"
+
+    def clean(self):
+        # Si le nageur veut s'inscrire en tant qu'entraîneur en a-t-il la permission ?
+        if self.swimmer_is_coach and not self.swimmer.is_coach:
+            raise ValidationError(
+                "Le nageur n'a pas la permission de s'inscrire en tant qu'entraîneur"
+            )
+
+        # Si le nageur ou l'entraîneur veut s'inscrire en a-t-il la permission en fonction de ses groupes ?
+        if (
+            self.session.group is not None
+            and not self.swimmer.groups.filter(
+                pk__in=self.session.group.groups.values("pk")
+            ).exists()
+        ):
+            raise ValidationError(
+                "Le nageur ne peut pas s'inscrire car il n'est pas dans le groupe de la séance"
+            )
+
+        # Si le nageur veut s'inscrire a-t-il déjà un entraînement prévu à la même heure ?
+        if (
+            not self.swimmer_is_coach
+            and self.__class__.objects.exclude(pk=self.pk)
+            .filter(
+                swimmer=self.swimmer,
+                session__year=self.session.year,
+                session__week=self.session.week,
+                session__weekday=self.session.weekday,
+                session__start_hour=self.session.start_hour,
+            )
+            .exists()
+        ):
+            raise ValidationError(
+                "Le nageur ne peut pas s'inscrire car il a déjà un entraînement prévu à la même heure"
+            )
+
+        # TODO: Cette contrainte pourra être levée plus tard si besoin
+        # Dans ce cas on pourrait dire qu'on autorise les inscriptions ponctuelles
+        # dans le futur et que les inscriptions régulières ne doivent correspondre
+        # qu'à des inscriptions régulières de la semaine courante en annulation
+        # C'est beaucoup plus simple que d'autoriser les inscriptions régulières
+        # sans contrainte dans le futur qui seraient difficiles à interpréter
+
+        # Un nageur ou un entraîneur ne peut pas s'inscrire à une séance future
+        # mais seulement annuler dans le futur une inscription régulière
+        if not (self.is_regular and self.is_cancelled) and GlobalState.is_future_week(
+            self.session.year, self.session.week
+        ):
+            raise ValidationError(
+                "Un nageur ou un entraîneur ne peut pas s'inscrire à une séance future"
+            )
+
+    def delete(self, *args, **kwargs):
+        # Si on a supprimé toutes les inscriptions futures d'une séance
+        # alors on supprime la séance future
+        if (
+            GlobalState.is_future_week(self.session.year, self.session.week)
+            and self.__class__.objects.filter(session=self.session)
+            .exclude(pk=self.pk)
+            .count()
+            == 0
+        ):
+            self.session.delete()
+
+        # Si on supprime une inscription régulière de la semaine courante
+        # alors on supprime toutes les séances futures annulées associées
+        elif self.is_regular and GlobalState.is_current_week(
+            self.session.year, self.session.week
+        ):
+            self.__class__.objects.filter(
+                models.Q(session__year__gt=self.session.year)
+                | models.Q(
+                    session__year=self.session.year, session__week__gt=self.session.week
+                ),
+                session__group=self.session.group,
+                session__weekday=self.session.weekday,
+                session__start_hour=self.session.start_hour,
+                is_regular=True,
+                is_cancelled=True,
+            ).delete()
+
+        return super().delete(*args, **kwargs)

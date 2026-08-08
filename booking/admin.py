@@ -1,90 +1,67 @@
 from django.contrib import admin
-from django.forms import ModelForm, ValidationError
 from django.http import HttpRequest
 from django.db.models.query import QuerySet
 
 from .models import (
     SessionGroup,
-    AbstractWeeklySession,
     WeeklySession,
-    WeeklySessionHistory,
     SessionRegistration,
-    SessionRegistrationHistory,
-    GlobalSetting,
+    GlobalState,
 )
 
 
 @admin.register(SessionGroup)
 class SessionGroupAdmin(admin.ModelAdmin):
-    list_filter = ["group"]
-
-
-class WeeklySessionAdminForm(ModelForm):
-    UNIQUE_FIELDS = ["weekday", "start_hour"]
-
-    def clean(self):
-        """
-        Vérifie la contrainte d'unicité des séances.
-
-        On ne peut pas effectuer cette vérification en base
-        à cause de la relation m2m de WeeklySession.groups.
-        """
-        self.instance: AbstractWeeklySession
-        concurrent_sessions = self.instance.__class__.objects.filter(
-            **{field: self.cleaned_data[field] for field in self.UNIQUE_FIELDS}
-        )
-
-        # Modification d'une séance existante
-        if self.instance.pk:
-            concurrent_sessions = concurrent_sessions.exclude(pk=self.instance.pk)
-
-        groups_set = set(self.cleaned_data["groups"])
-
-        for session in concurrent_sessions:
-            if groups_set == set(session.groups.all()):
-                raise ValidationError("Une séance similaire existe déjà")
-
-
-class WeeklySessionHistoryAdminForm(WeeklySessionAdminForm):
-    UNIQUE_FIELDS = ["weekday", "start_hour", "year", "week"]
+    list_filter = [
+        "name",
+        "groups",
+    ]
 
 
 @admin.register(WeeklySession)
 class WeeklySessionAdmin(admin.ModelAdmin):
-    form = WeeklySessionAdminForm
+    """
+    TODO: Annuler une séance dans le futur
+    Si besoin peut être implémenté hors de l'interface admin
+    """
+
     ordering = [
+        "year",
+        "week",
         "weekday",
         "start_hour",
     ]
     list_filter = [
+        "year",
+        "week",
         "weekday",
-        "groups",
+        "group",
     ]
     actions = ["lock_sessions", "unlock_sessions"]
 
+    # TODO: Renommer en Annuler
     @admin.action(description="Verrouiller les sessions hebdomadaires sélectionnées")
     def lock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=True)
 
+    # TODO: Restaurer ? C'est quoi le contraire d'Annuler ?
     @admin.action(description="Déverrouiller les sessions hebdomadaires sélectionnées")
     def unlock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=False)
 
-
-@admin.register(WeeklySessionHistory)
-class WeeklySessionHistoryAdmin(admin.ModelAdmin):
-    form = WeeklySessionHistoryAdminForm
-    list_filter = [
-        "year",
-        "week",
-        "weekday",
-        "groups",
-    ]
+    def delete_queryset(self, request, queryset):
+        """
+        Permet d'appliquer la logique de suppression de WeeklySession.delete()
+        """
+        for obj in queryset:
+            self.delete_model(request, obj)
 
 
 @admin.register(SessionRegistration)
 class SessionRegistrationAdmin(admin.ModelAdmin):
     ordering = [
+        "session__year",
+        "session__week",
         "session__weekday",
         "session__start_hour",
         "pk",
@@ -92,32 +69,25 @@ class SessionRegistrationAdmin(admin.ModelAdmin):
     search_fields = [
         "swimmer__first_name",
         "swimmer__last_name",
+        "session__year",
+        "session__week",
     ]
     list_filter = [
+        "session__year",
+        "session__week",
         "session__weekday",
-        "session__groups",
+        "session__group",
         "is_regular",
         "is_cancelled",
         "swimmer_is_coach",
     ]
 
-
-@admin.register(SessionRegistrationHistory)
-class SessionRegistrationHistoryAdmin(admin.ModelAdmin):
-    search_fields = [
-        "swimmer__first_name",
-        "swimmer__last_name",
-        "session__year",
-        "session__week",
-    ]
-    list_filter = [
-        "session__year",
-        "session__week",
-        "session__groups",
-        "is_regular",
-        "is_cancelled",
-        "swimmer_is_coach",
-    ]
+    def delete_queryset(self, request, queryset):
+        """
+        Permet d'appliquer la logique de suppression de SessionRegistration.delete()
+        """
+        for obj in queryset:
+            self.delete_model(request, obj)
 
 
-admin.site.register(GlobalSetting)
+admin.site.register(GlobalState)

@@ -9,6 +9,13 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets
     fieldsets[1][1]["fields"] += ("enable_notifications",)
 
+    def delete_queryset(self, request, queryset):
+        """
+        Permet d'appliquer la logique de suppression de User.delete()
+        """
+        for obj in queryset:
+            self.delete_model(request, obj)
+
 
 def clean(self):
     username = self.cleaned_data.get("username")
