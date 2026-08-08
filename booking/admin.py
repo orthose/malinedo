@@ -39,13 +39,11 @@ class WeeklySessionAdmin(admin.ModelAdmin):
     ]
     actions = ["lock_sessions", "unlock_sessions"]
 
-    # TODO: Renommer en Annuler
-    @admin.action(description="Verrouiller les sessions hebdomadaires sélectionnées")
+    @admin.action(description="Annuler les sessions hebdomadaires sélectionnées")
     def lock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=True)
 
-    # TODO: Restaurer ? C'est quoi le contraire d'Annuler ?
-    @admin.action(description="Déverrouiller les sessions hebdomadaires sélectionnées")
+    @admin.action(description="Restaurer les sessions hebdomadaires sélectionnées")
     def unlock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=False)
 
