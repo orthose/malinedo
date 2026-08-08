@@ -10,6 +10,20 @@ asgiref==3.8.1
     #   django
 django==5.1.2
     # via -r requirements.txt
+iniconfig==2.3.0
+    # via pytest
+packaging==26.2
+    # via pytest
+pluggy==1.6.0
+    # via pytest
+pygments==2.20.0
+    # via pytest
+pytest==9.1.1
+    # via
+    #   -r requirements-dev.in
+    #   pytest-django
+pytest-django==4.12.0
+    # via -r requirements-dev.in
 python-dotenv==1.0.1
     # via -r requirements.txt
 ruff==0.7.1
