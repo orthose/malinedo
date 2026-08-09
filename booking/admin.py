@@ -37,6 +37,7 @@ class WeeklySessionAdmin(admin.ModelAdmin):
         "weekday",
         "group",
     ]
+    search_fields = ["year", "week"]
     actions = ["lock_sessions", "unlock_sessions"]
 
     @admin.action(description="Annuler les sessions hebdomadaires sélectionnées")
@@ -165,6 +166,7 @@ class SessionRegistrationAdmin(admin.ModelAdmin):
         "is_cancelled",
         "swimmer_is_coach",
     ]
+    autocomplete_fields = ["session"]
 
     def changelist_view(self, request: HttpRequest, extra_context=None) -> HttpResponse:
         # Affichage des inscriptions de la semaine courante par défaut
