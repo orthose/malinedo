@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.http import HttpRequest
 from django.db.models.query import QuerySet
+from django.shortcuts import redirect
+from django.utils.http import urlencode
 
 from .models import (
     SessionGroup,
@@ -47,6 +49,16 @@ class WeeklySessionAdmin(admin.ModelAdmin):
     def unlock_sessions(self, request: HttpRequest, queryset: QuerySet[WeeklySession]):
         queryset.update(is_cancelled=False)
 
+    def changelist_view(self, request, extra_context=None):
+        # Affichage des séances de la semaine courante par défaut
+        if not request.GET:
+            params = {
+                "year": GlobalState.get_year(),
+                "week": GlobalState.get_week(),
+            }
+            return redirect(f"{request.path}?{urlencode(params)}")
+        return super().changelist_view(request, extra_context)
+
     def delete_queryset(self, request, queryset):
         """
         Permet d'appliquer la logique de suppression de WeeklySession.delete()
@@ -79,6 +91,16 @@ class SessionRegistrationAdmin(admin.ModelAdmin):
         "is_cancelled",
         "swimmer_is_coach",
     ]
+
+    def changelist_view(self, request, extra_context=None):
+        # Affichage des inscriptions de la semaine courante par défaut
+        if not request.GET:
+            params = {
+                "session__year": GlobalState.get_year(),
+                "session__week": GlobalState.get_week(),
+            }
+            return redirect(f"{request.path}?{urlencode(params)}")
+        return super().changelist_view(request, extra_context)
 
     def delete_queryset(self, request, queryset):
         """
