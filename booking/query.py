@@ -44,11 +44,11 @@ class WeekScheduleQuery:
         self, year: int, week: int
     ) -> models.QuerySet[WeeklySession]:
         """
-        Construit le QuerySet de WeeklySessionPrefetchedRegistrations pour une semaine donnée.
+        Construit le QuerySet de WeeklySession enrichi pour une semaine donnée.
         """
         session_filters = (
             {"sessionregistration__swimmer": self.user}
-            if self.only_user_sessions
+            if self.only_user_sessions and not GlobalState.is_future_week(year, week)
             else {}
         )
 
@@ -122,7 +122,7 @@ class WeekScheduleQuery:
                     to_attr="swimmer_registrations",
                 )
             )
-            # TODO: Ajouter plus tard swimmers_cancelled_registrations
+            # TODO: Ajouter plus tard swimmer_cancelled_registrations
         )
 
     def __session_key(self, session: WeeklySession) -> tuple:
@@ -195,7 +195,7 @@ class WeekScheduleQuery:
                 for session in schedule_requested_week
             }
 
-            schedule_future_week = list()
+            schedule_future_week: WeekSchedule = list()
 
             for session in schedule_current_week:
                 future_session = future_sessions.get(self.__session_key(session))
@@ -242,6 +242,14 @@ class WeekScheduleQuery:
 
             # On ajoute au planning toutes les séances futures
             schedule_future_week.extend(schedule_requested_week)
+
+            if self.only_user_sessions:
+                # On supprime les séances futures auquel le nageur n'est pas inscrit
+                schedule_future_week[:] = [
+                    session
+                    for session in schedule_future_week
+                    if len(session.user_registration) > 0
+                ]
 
             self.schedule = schedule_future_week
 

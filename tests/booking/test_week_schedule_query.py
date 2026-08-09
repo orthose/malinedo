@@ -103,6 +103,7 @@ def test_current_week_schedule(data):
     assert session.year == year
     assert session.week == week
     assert session.capacity == 10
+    assert not session.is_cancelled
 
     assert len(session.user_registration) == 1
 
@@ -183,6 +184,7 @@ def test_future_week_schedule(data):
     assert session.year == year
     assert session.week == week
     assert session.capacity == 12
+    assert not session.is_cancelled
 
     assert len(session.user_registration) == 1
 
@@ -688,3 +690,195 @@ def test_future_week_schedule_alice_is_coach(data):
     assert not session.coach_registrations[0].is_cancelled
     assert session.coach_registrations[0].swimmer_is_coach
     assert session.coach_registrations[0].is_regular
+
+
+def test_current_week_schedule_session_is_cancelled(data):
+    # Given
+    year = 2026
+    week = 30
+    alice_swimmer = data["alice_swimmer"]
+    bob_swimmer = data["bob_swimmer"]
+    current_session = data["current_session"]
+    alice_registration = data["alice_registration"]
+    current_session.is_cancelled = True
+    current_session.save()
+
+    # When
+    week_schedule_query = WeekScheduleQuery(
+        year, week, alice_swimmer, only_user_sessions=False
+    )
+    week_schedule_query.load_schedule()
+    schedule = week_schedule_query.schedule
+
+    # Then
+    assert week_schedule_query.user_registration_count == 0
+    assert len(schedule) == 1
+    assert current_session in schedule
+
+    session = schedule[0]
+    assert session.year == year
+    assert session.week == week
+    assert session.capacity == 10
+    assert session.is_cancelled
+
+    assert len(session.user_registration) == 1
+
+    assert session.user_registration[0].session == current_session
+    assert session.user_registration[0].pk == alice_registration.pk
+    assert not session.user_registration[0].is_cancelled
+    assert session.user_registration[0].is_regular
+    assert not session.user_registration[0].swimmer_is_coach
+
+    assert len(session.swimmer_registrations) == 2
+
+    assert session.swimmer_registrations[0].swimmer.pk == alice_swimmer.pk
+    assert session.swimmer_registrations[0].session == current_session
+    assert not session.swimmer_registrations[0].is_cancelled
+    assert not session.swimmer_registrations[0].swimmer_is_coach
+    assert session.swimmer_registrations[0].is_regular
+
+    assert session.swimmer_registrations[1].swimmer.pk == bob_swimmer.pk
+    assert session.swimmer_registrations[1].session == current_session
+    assert not session.swimmer_registrations[1].is_cancelled
+    assert not session.swimmer_registrations[1].is_regular
+    assert not session.swimmer_registrations[1].swimmer_is_coach
+
+    assert len(session.coach_registrations) == 0
+
+
+def test_current_week_schedule_session_is_cancelled_only_user_sessions(data):
+    # Given
+    year = 2026
+    week = 30
+    alice_swimmer = data["alice_swimmer"]
+    bob_swimmer = data["bob_swimmer"]
+    current_session = data["current_session"]
+    alice_registration = data["alice_registration"]
+    current_session.is_cancelled = True
+    current_session.save()
+
+    # When
+    week_schedule_query = WeekScheduleQuery(
+        year, week, alice_swimmer, only_user_sessions=True
+    )
+    week_schedule_query.load_schedule()
+    schedule = week_schedule_query.schedule
+
+    # Then
+    assert week_schedule_query.user_registration_count == 0
+    assert len(schedule) == 1
+    assert current_session in schedule
+
+    session = schedule[0]
+    assert session.year == year
+    assert session.week == week
+    assert session.capacity == 10
+    assert session.is_cancelled
+
+    assert len(session.user_registration) == 1
+
+    assert session.user_registration[0].session == current_session
+    assert session.user_registration[0].pk == alice_registration.pk
+    assert not session.user_registration[0].is_cancelled
+    assert session.user_registration[0].is_regular
+    assert not session.user_registration[0].swimmer_is_coach
+
+    assert len(session.swimmer_registrations) == 2
+
+    assert session.swimmer_registrations[0].swimmer.pk == alice_swimmer.pk
+    assert session.swimmer_registrations[0].session == current_session
+    assert not session.swimmer_registrations[0].is_cancelled
+    assert not session.swimmer_registrations[0].swimmer_is_coach
+    assert session.swimmer_registrations[0].is_regular
+
+    assert session.swimmer_registrations[1].swimmer.pk == bob_swimmer.pk
+    assert session.swimmer_registrations[1].session == current_session
+    assert not session.swimmer_registrations[1].is_cancelled
+    assert not session.swimmer_registrations[1].is_regular
+    assert not session.swimmer_registrations[1].swimmer_is_coach
+
+    assert len(session.coach_registrations) == 0
+
+
+def test_future_week_schedule_session_is_cancelled(data):
+    # Given
+    year = 2026
+    week = 31
+    alice_swimmer = data["alice_swimmer"]
+    current_session = data["current_session"]
+    future_session = data["future_session"]
+    alice_registration = data["alice_registration"]
+    future_session.is_cancelled = True
+    future_session.save()
+
+    # When
+    week_schedule_query = WeekScheduleQuery(
+        year, week, alice_swimmer, only_user_sessions=False
+    )
+    week_schedule_query.load_schedule()
+    schedule = week_schedule_query.schedule
+
+    # Then
+    assert week_schedule_query.user_registration_count == 0
+    assert len(schedule) == 1
+    assert future_session in schedule
+
+    session = schedule[0]
+    assert session.year == year
+    assert session.week == week
+    assert session.capacity == 12
+    assert session.is_cancelled
+
+    assert len(session.user_registration) == 1
+
+    # On ne modifie pas actuellement la séance de l'inscription on ne fait que l'importer
+    assert session.user_registration[0].session == current_session
+    assert session.user_registration[0].pk == alice_registration.pk
+    assert not session.user_registration[0].is_cancelled
+    assert session.user_registration[0].is_regular
+    assert not session.user_registration[0].swimmer_is_coach
+
+    assert len(session.swimmer_registrations) == 1
+    assert len(session.coach_registrations) == 0
+
+
+def test_future_week_schedule_session_is_cancelled_only_user_sessions(data):
+    # Given
+    year = 2026
+    week = 31
+    alice_swimmer = data["alice_swimmer"]
+    current_session = data["current_session"]
+    future_session = data["future_session"]
+    alice_registration = data["alice_registration"]
+    future_session.is_cancelled = True
+    future_session.save()
+
+    # When
+    week_schedule_query = WeekScheduleQuery(
+        year, week, alice_swimmer, only_user_sessions=True
+    )
+    week_schedule_query.load_schedule()
+    schedule = week_schedule_query.schedule
+
+    # Then
+    assert week_schedule_query.user_registration_count == 0
+    assert len(schedule) == 1
+    assert future_session in schedule
+
+    session = schedule[0]
+    assert session.year == year
+    assert session.week == week
+    assert session.capacity == 12
+    assert session.is_cancelled
+
+    assert len(session.user_registration) == 1
+
+    # On ne modifie pas actuellement la séance de l'inscription on ne fait que l'importer
+    assert session.user_registration[0].session == current_session
+    assert session.user_registration[0].pk == alice_registration.pk
+    assert not session.user_registration[0].is_cancelled
+    assert session.user_registration[0].is_regular
+    assert not session.user_registration[0].swimmer_is_coach
+
+    assert len(session.swimmer_registrations) == 1
+    assert len(session.coach_registrations) == 0
