@@ -167,6 +167,8 @@ class WeeklySession(models.Model):
     user_registration: list["SessionRegistration"]
     coach_registrations: list["SessionRegistration"]
     swimmer_registrations: list["SessionRegistration"]
+    coach_cancelled_registrations: list["SessionRegistration"]
+    swimmer_cancelled_registrations: list["SessionRegistration"]
 
     class Meta:
         verbose_name = "session hebdomadaire"

@@ -128,6 +128,8 @@ def test_current_week_schedule(data):
     assert not session.swimmer_registrations[1].swimmer_is_coach
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_past_week_schedule(data):
@@ -157,6 +159,8 @@ def test_past_week_schedule(data):
     assert len(session.user_registration) == 0
     assert len(session.swimmer_registrations) == 0
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_future_week_schedule(data):
@@ -197,6 +201,8 @@ def test_future_week_schedule(data):
 
     assert len(session.swimmer_registrations) == 1
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_not_regular_current_registration_should_not_be_imported_in_future(data):
@@ -229,6 +235,8 @@ def test_not_regular_current_registration_should_not_be_imported_in_future(data)
     assert len(session.user_registration) == 0
     assert len(session.swimmer_registrations) == 0
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_cancelled_current_registration_should_be_imported_in_future(data):
@@ -270,6 +278,8 @@ def test_cancelled_current_registration_should_be_imported_in_future(data):
 
     assert len(session.swimmer_registrations) == 1
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_cancel_future_registration(data):
@@ -312,6 +322,15 @@ def test_cancel_future_registration(data):
 
     assert len(session.swimmer_registrations) == 0
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+
+    assert len(session.swimmer_cancelled_registrations) == 1
+
+    assert session.swimmer_cancelled_registrations[0].session == future_session
+    assert session.swimmer_cancelled_registrations[0].pk == alice_future_registration.pk
+    assert session.swimmer_cancelled_registrations[0].is_cancelled
+    assert session.swimmer_cancelled_registrations[0].is_regular
+    assert not session.swimmer_cancelled_registrations[0].swimmer_is_coach
 
 
 def test_future_session_does_not_exist(data):
@@ -352,6 +371,8 @@ def test_future_session_does_not_exist(data):
 
     assert len(session.swimmer_registrations) == 1
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_current_week_schedule_not_only_user_sessions(data):
@@ -423,6 +444,8 @@ def test_current_week_schedule_not_only_user_sessions(data):
     assert not session.swimmer_registrations[1].swimmer_is_coach
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_current_week_schedule_only_user_sessions(data):
@@ -484,6 +507,8 @@ def test_current_week_schedule_only_user_sessions(data):
     assert not session.swimmer_registrations[1].swimmer_is_coach
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_current_week_schedule_bob_is_coach(data):
@@ -539,6 +564,9 @@ def test_current_week_schedule_bob_is_coach(data):
     assert not session.coach_registrations[0].is_regular
     assert session.coach_registrations[0].swimmer_is_coach
 
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
+
 
 def test_current_week_schedule_alice_is_coach(data):
     # Given
@@ -592,6 +620,9 @@ def test_current_week_schedule_alice_is_coach(data):
     assert session.coach_registrations[0].is_regular
     assert session.coach_registrations[0].swimmer_is_coach
 
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
+
 
 def test_future_week_schedule_bob_is_coach(data):
     # Given
@@ -641,6 +672,8 @@ def test_future_week_schedule_bob_is_coach(data):
     assert session.swimmer_registrations[0].is_regular
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_future_week_schedule_alice_is_coach(data):
@@ -690,6 +723,9 @@ def test_future_week_schedule_alice_is_coach(data):
     assert not session.coach_registrations[0].is_cancelled
     assert session.coach_registrations[0].swimmer_is_coach
     assert session.coach_registrations[0].is_regular
+
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_current_week_schedule_session_is_cancelled(data):
@@ -744,6 +780,8 @@ def test_current_week_schedule_session_is_cancelled(data):
     assert not session.swimmer_registrations[1].swimmer_is_coach
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_current_week_schedule_session_is_cancelled_only_user_sessions(data):
@@ -798,6 +836,8 @@ def test_current_week_schedule_session_is_cancelled_only_user_sessions(data):
     assert not session.swimmer_registrations[1].swimmer_is_coach
 
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_future_week_schedule_session_is_cancelled(data):
@@ -840,6 +880,8 @@ def test_future_week_schedule_session_is_cancelled(data):
 
     assert len(session.swimmer_registrations) == 1
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
 
 
 def test_future_week_schedule_session_is_cancelled_only_user_sessions(data):
@@ -882,3 +924,66 @@ def test_future_week_schedule_session_is_cancelled_only_user_sessions(data):
 
     assert len(session.swimmer_registrations) == 1
     assert len(session.coach_registrations) == 0
+    assert len(session.coach_cancelled_registrations) == 0
+    assert len(session.swimmer_cancelled_registrations) == 0
+
+
+def test_current_week_schedule_cancelled_registrations(data):
+    # Given
+    year = 2026
+    week = 30
+    alice_swimmer = data["alice_swimmer"]
+    bob_swimmer = data["bob_swimmer"]
+    current_session = data["current_session"]
+    alice_registration = data["alice_registration"]
+    bob_registration = data["bob_registration"]
+    alice_registration.is_cancelled = True
+    alice_registration.save()
+    bob_registration.is_cancelled = True
+    bob_registration.swimmer_is_coach = True
+    bob_registration.save()
+
+    # When
+    week_schedule_query = WeekScheduleQuery(
+        year, week, alice_swimmer, only_user_sessions=False
+    )
+    week_schedule_query.load_schedule()
+    schedule = week_schedule_query.schedule
+
+    # Then
+    assert week_schedule_query.user_registration_count == 0
+    assert len(schedule) == 1
+    assert current_session in schedule
+
+    session = schedule[0]
+    assert session.year == year
+    assert session.week == week
+    assert session.capacity == 10
+    assert not session.is_cancelled
+
+    assert len(session.user_registration) == 1
+
+    assert session.user_registration[0].session == current_session
+    assert session.user_registration[0].pk == alice_registration.pk
+    assert session.user_registration[0].is_cancelled
+    assert session.user_registration[0].is_regular
+    assert not session.user_registration[0].swimmer_is_coach
+
+    assert len(session.swimmer_registrations) == 0
+    assert len(session.coach_registrations) == 0
+
+    assert len(session.coach_cancelled_registrations) == 1
+
+    assert session.coach_cancelled_registrations[0].swimmer.pk == bob_swimmer.pk
+    assert session.coach_cancelled_registrations[0].session == current_session
+    assert session.coach_cancelled_registrations[0].is_cancelled
+    assert not session.coach_cancelled_registrations[0].is_regular
+    assert session.coach_cancelled_registrations[0].swimmer_is_coach
+
+    assert len(session.swimmer_cancelled_registrations) == 1
+
+    assert session.swimmer_cancelled_registrations[0].swimmer.pk == alice_swimmer.pk
+    assert session.swimmer_cancelled_registrations[0].session == current_session
+    assert session.swimmer_cancelled_registrations[0].is_cancelled
+    assert not session.swimmer_cancelled_registrations[0].swimmer_is_coach
+    assert session.swimmer_cancelled_registrations[0].is_regular

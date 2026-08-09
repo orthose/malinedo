@@ -122,7 +122,32 @@ class WeekScheduleQuery:
                     to_attr="swimmer_registrations",
                 )
             )
-            # TODO: Ajouter plus tard swimmer_cancelled_registrations
+            .prefetch_related(
+                # Liste des inscriptions des entraîneurs annulées triées par création
+                models.Prefetch(
+                    "sessionregistration_set",
+                    queryset=SessionRegistration.objects.filter(
+                        swimmer_is_coach=True,
+                        is_cancelled=True,
+                    )
+                    .select_related("swimmer")
+                    .order_by("pk"),
+                    to_attr="coach_cancelled_registrations",
+                )
+            )
+            .prefetch_related(
+                # Liste des inscriptions des nageurs annulées triées par création
+                models.Prefetch(
+                    "sessionregistration_set",
+                    queryset=SessionRegistration.objects.filter(
+                        swimmer_is_coach=False,
+                        is_cancelled=True,
+                    )
+                    .select_related("swimmer")
+                    .order_by("pk"),
+                    to_attr="swimmer_cancelled_registrations",
+                )
+            )
         )
 
     def __session_key(self, session: WeeklySession) -> tuple:
@@ -209,6 +234,9 @@ class WeekScheduleQuery:
                     self.__reset_registrations(session.user_registration)
                     self.__reset_registrations(session.coach_registrations)
                     self.__reset_registrations(session.swimmer_registrations)
+
+                    session.coach_cancelled_registrations = []
+                    session.swimmer_cancelled_registrations = []
 
                     # On ajoute la séance au planning
                     schedule_future_week.append(session)

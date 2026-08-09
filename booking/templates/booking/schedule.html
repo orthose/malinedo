@@ -119,9 +119,9 @@ function toggle_collapse_button(button) {
                 {% for reg in session.coach_registrations %}
                     <div class="text-truncate overflow-hidden">
                     {% if reg.is_regular %}
-                        <i class="bi bi-stopwatch-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur régulier"></i>
+                        <i class="bi bi-clipboard2-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur régulier"></i>
                     {% else %}
-                        <i class="bi bi-stopwatch fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel"></i>
+                        <i class="bi bi-clipboard2 fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel"></i>
                     {% endif %}
                     {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     </div>
@@ -144,6 +144,35 @@ function toggle_collapse_button(button) {
                     {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
                     </div>
                 {% endfor %}
+                {% if session.coach_cancelled_registrations or session.swimmer_cancelled_registrations %}
+                    <div class="w-100 d-flex flex-column mt-2 mb-2">
+                        <button class="btn btn-sm btn-outline-{% if session.background_is_colored %}light{% else %}dark{% endif %} fs-6" type="button" data-bs-toggle="collapse" data-bs-target="#cancelledRegistrations{{ session.id }}" aria-expanded="false" aria-controls="cancelledRegistrations{{ session.id }}">
+                            <i class="bi bi-x-circle"></i> Absents
+                        </button>
+                    </div>
+                    <div class="collapse mb-2" id="cancelledRegistrations{{ session.id }}">
+                        {% for reg in session.coach_cancelled_registrations %}
+                            <div class="text-truncate overflow-hidden">
+                            {% if reg.is_regular %}
+                                <i class="bi bi-clipboard2-x-fill fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur régulier absent"></i>
+                            {% else %}
+                                <i class="bi bi-clipboard2-x fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Entraîneur ponctuel absent"></i>
+                            {% endif %}
+                            {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
+                            </div>
+                        {% endfor %}
+                        {% for reg in session.swimmer_cancelled_registrations %}
+                            <div class="text-truncate overflow-hidden">
+                            {% if reg.is_regular %}
+                                <i class="bi bi-person-fill-x fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur régulier absent"></i>
+                            {% else %}
+                                <i class="bi bi-person-x fs-5" data-bs-toggle="tooltip" data-bs-placement="top" title="Nageur ponctuel absent"></i>
+                            {% endif %}
+                            {{ reg.swimmer.first_name }}&nbsp;{{ reg.swimmer.last_name|upper }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 </div>
             {% if is_current_week and not session.is_cancelled  %}
                 <div id="editSession{{ session.id }}" class="collapse">
@@ -163,7 +192,7 @@ function toggle_collapse_button(button) {
                             {% if is_coach %}
                             <input type="checkbox" name="swimmer_is_coach" class="btn-check" id="btn-coach-{{ session.id }}" autocomplete="off">
                             <label class="btn btn-outline-primary" for="btn-coach-{{ session.id }}" type="button">
-                                <i class="bi bi-stopwatch fs-5"></i> Entraîneur
+                                <i class="bi bi-clipboard2 fs-5"></i> Entraîneur
                             </label>
                             {% endif %}
                         {% elif not session.user_registration.0.is_cancelled %}
