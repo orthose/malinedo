@@ -1,0 +1,39 @@
+[project]
+name = "malinedo"
+dynamic = ["version"]
+description = "MaLineDo est l'application web de réservation des créneaux d'entraînement pour le club de nage avec palmes de l'USPalaiseau"
+readme = "README.md"
+authors = [
+    { name = "Maxime VINCENT" }
+]
+requires-python = "~=3.11.0"
+dependencies = [
+    "django==5.1.2",
+    "python-dotenv>=1.2.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "hatch>=1.17.1",
+    "pytest>=9.1.1",
+    "pytest-django>=4.13.0",
+    "ruff==0.7.1",
+]
+prod = [
+    "gunicorn>=26.0.0",
+    "psycopg2-binary>=2.9.12",
+]
+
+[tool.hatch.version]
+path = "src/malinedo/__version__.py"
+
+[tool.hatch.build.targets.sdist]
+sources = ["src"]
+include = ["/src", "requirements-prod.txt"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "malinedo.settings"
