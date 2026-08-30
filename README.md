@@ -19,7 +19,7 @@ Je me suis inspiré de ce [tutoriel](https://www.digitalocean.com/community/tuto
 
 ```bash
 sudo apt update && sudo apt upgrade
-sudo apt install python3.11 python3.11-venv postgresql postgresql-client nginx git cron
+sudo apt install python3.11 python3.11-venv postgresql postgresql-client nginx cron
 ```
 
 ## Base de données
@@ -32,7 +32,9 @@ GRANT ALL PRIVILEGES ON DATABASE malinedodb TO malinedo;
 ALTER DATABASE malinedodb OWNER TO malinedo;
 ```
 
-## Téléchargement du projet
+## Déploiement du projet
+
+Depuis le serveur de déploiement :
 
 ```bash
 # Création d'un utilisateur applicatif sans droits sudo
@@ -43,11 +45,33 @@ sudo chmod 750 /var/www/html/malinedo
 sudo chown malinedo:www-data /var/www/html/malinedo
 sudo su malinedo
 cd /home/malinedo
-git clone https://github.com/orthose/malinedo.git
-cd malinedo
-python3.11 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-prod.txt
+mkdir -p malinedo/app
+```
+
+Si vous utilisez un autre utilisateur `toto` pour déployer l'archive sur le serveur,
+il faut lui donner le droit de déposer l'archive.
+
+```bash
+sudo usermod -aG malinedo toto
+sudo chmod g+rwx /home/malinedo/malinedo
+```
+
+Depuis la machine de build :
+
+```bash
+source deploy.sh
+```
+
+Vous devez configurer les variables d'environnement `$SSH_SERVER` et `$SSH_KEY_FILE`
+pour que le script fonctionne.
+
+Une alternative pourrait être de déposer l'archive dans un Drive ou de l'ajouter dans une release GitHub
+pour pouvoir la télécharger directement depuis le serveur de déploiement.
+
+Depuis le serveur de déploiement :
+
+```bash
+sudo systemctl restart malinedo
 ```
 
 ## Variables d'environnement
@@ -92,22 +116,9 @@ crontab -e
 ```
 
 ```
-0 1 * * sat cd ~/malinedo && .venv/bin/python manage.py move_next_week
-0 1 * * mon cd ~/malinedo && .venv/bin/python manage.py send_mail_reminder
-@daily pg_dump -U malinedo malinedodb > ~/backup/malinedodb_$(date +\%F).sql
-```
-
-## Initialisation des données
-
-```bash
-python manage.py migrate
-# Mettre la même adresse e-mail la 2ème fois
-# sinon cela bloque la création des utilisateurs
-python manage.py createsuperuser
-python manage.py create_global_settings
-python manage.py create_club_groups
-python manage.py create_users users.csv --add-group="L=Loisir"
-python manage.py collectstatic
+0 1 * * sat cd ~/malinedo/app && ../.venv/bin/python manage.py move_next_week
+0 1 * * mon cd ~/malinedo/app && ../.venv/bin/python manage.py send_mail_reminder
+0 0 * * sat pg_dump -U malinedo malinedodb > ~/backup/malinedodb_$(date +\%F).sql
 ```
 
 ## Création du service
@@ -126,8 +137,19 @@ After=network.target
 [Service]
 User=malinedo
 Group=malinedo
-WorkingDirectory=/home/malinedo/malinedo/
-ExecStart=/bin/bash -c ".venv/bin/gunicorn --access-logfile - --bind 127.0.0.1:8000 --workers 3 malinedo.wsgi:application"
+WorkingDirectory=/home/malinedo/malinedo/app/
+ExecStartPre=/bin/bash -c '\
+if [ -f ../*.tar.gz ]; then \
+	rm -rf ./* \
+	&& tar -xzf ../*.tar.gz --strip-components=1 \
+	&& rm -rf ../.venv \
+	&& python3.11 -m venv ../.venv \
+	&& ../.venv/bin/pip install -r requirements-prod.txt \
+	&& ../.venv/bin/python manage.py migrate \
+	&& ../.venv/bin/python manage.py collectstatic --noinput \
+	&& rm ../*.tar.gz; \
+fi'
+ExecStart=/bin/bash -c "../.venv/bin/gunicorn --access-logfile - --bind 127.0.0.1:8000 --workers 3 malinedo.wsgi:application"
 ExecStop=/bin/kill -SIGINT $MAINPID
 RestartSec=60
 
@@ -142,6 +164,20 @@ sudo systemctl enable malinedo
 sudo systemctl start malinedo
 # Vérifier l'état de l'application
 sudo systemctl status malinedo
+```
+
+## Initialisation des données
+
+```bash
+sudo su malinedo
+cd ~/malinedo/app
+source ../.venv/bin/activate
+# Mettre la même adresse e-mail la 2ème fois
+# sinon cela bloque la création des utilisateurs
+python manage.py createsuperuser
+python manage.py create_global_settings
+python manage.py create_club_groups
+python manage.py create_users users.csv --add-group="L=Loisir"
 ```
 
 ## Serveur Nginx

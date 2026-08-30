@@ -1,11 +1,10 @@
 # Environnement de développement
 
 ```bash
-sudo apt install python3.11 python3.11-venv
-python3.11 -m venv .venv
+# https://docs.astral.sh/uv/getting-started/installation/
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv
 source .venv/bin/activate
-pip install pip-tools
-pip-sync requirements-dev.txt
 ```
 
 Créer un fichier `.env` à la racine du projet.
@@ -20,6 +19,7 @@ SITE_URL="http://127.0.0.1:8000"
 # Initialisation de la base de données
 
 ```bash
+cd src/
 python manage.py migrate
 # Mettre la même adresse e-mail la 2ème fois
 # sinon cela bloque la création des utilisateurs
