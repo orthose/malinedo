@@ -95,6 +95,7 @@ class SessionGroup(models.Model):
     name = models.CharField("Nom", max_length=255, unique=True)
     groups = models.ManyToManyField(Group, verbose_name="Groupes")
     max_registrations_per_week = models.PositiveSmallIntegerField(
+        default=0,
         verbose_name="Limite d'inscriptions hebdomadaires par nageur",
     )
 

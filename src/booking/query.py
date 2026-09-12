@@ -80,6 +80,7 @@ class WeekScheduleQuery:
                 week=week,
                 **session_filters,
             )
+            .distinct()
             .select_related("group")
             .order_by("weekday", "start_hour")
             # Prefetch se charge de joindre par clé étrangère session

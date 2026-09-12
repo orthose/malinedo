@@ -213,7 +213,9 @@ def groups(request: HttpRequest) -> HttpRequest:
     context = {
         "session_groups": SessionGroup.objects.filter(
             groups__in=request.user.groups.all()
-        ),
+        )
+        .distinct()
+        .order_by("name"),
         "admins": User.objects.filter(is_staff=True, is_superuser=False),
     }
 

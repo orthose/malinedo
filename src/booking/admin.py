@@ -21,6 +21,7 @@ class SessionGroupAdmin(admin.ModelAdmin):
         "name",
         "groups",
     ]
+    ordering = ["name"]
 
 
 @admin.register(WeeklySession)

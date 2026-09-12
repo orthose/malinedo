@@ -243,10 +243,8 @@ sudo systemctl restart nginx
 
 ## Première connexion
 
-Accédez au site via l'URL https://domaine.com/.
-Le mot de passe est généré aléatoirement.
-Vous devez cliquer sur **Mot de passe oublié**
-pour pouvoir le réinitialiser.
+Accédez au site via l'URL https://domaine.com/. Le mot de passe est généré aléatoirement.
+Vous devez cliquer sur **Mot de passe oublié** pour pouvoir le réinitialiser.
 
 ## Création des groupes
 
@@ -258,6 +256,10 @@ Une séance d'entraînement correspond à un groupe de niveau de nage.
 Les groupes de niveau de nage (ex: Loisir, Jeune, Compétition)
 doivent d'abord être créés dans le modèle **Groupes** puis ajoutés dans **Groupes de nage**
 avec le super-utilisateur.
+
+Veillez à créer un groupe de nage pour chaque groupe (sauf Bureau et Entraîneur)
+et à bien renseigner la limite d'inscriptions hebdomadaires par nageur.
+Pour les groupes de nage comportant plusieurs groupes, cette limite doit être fixée à 0. 
 
 ## Attribution des groupes
 
